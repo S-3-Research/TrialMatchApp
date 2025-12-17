@@ -1,4 +1,7 @@
 import { WORKFLOW_ID } from "@/lib/config";
+import { supabase } from "@/lib/supabase"; // 之前创建的 supabase 客户端
+// 1. 引入 Clerk 的服务端 Auth 方法
+import { auth } from "@clerk/nextjs/server";
 
 export const runtime = "edge";
 
@@ -19,119 +22,83 @@ const SESSION_COOKIE_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
 export async function POST(request: Request): Promise<Response> {
   if (request.method !== "POST") {
-    return methodNotAllowedResponse();
+    return new Response("Method Not Allowed", { status: 405 });
   }
-  let sessionCookie: string | null = null;
+
   try {
     const openaiApiKey = process.env.OPENAI_API_KEY;
-    if (!openaiApiKey) {
-      return new Response(
-        JSON.stringify({
-          error: "Missing OPENAI_API_KEY environment variable",
-        }),
-        {
-          status: 500,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
+    if (!openaiApiKey)
+      return new Response("Missing OpenAI API Key", { status: 500 });
+
+    // -------------------------------------------------------------
+    // 改动点 1: 真正鉴权 (Clerk)
+    // -------------------------------------------------------------
+    // const { userId } = auth(); // 一行代码搞定鉴权
+    const { userId, debug } = await auth(); // 解构出 debug
+
+    console.log("------- DEBUG AUTH -------");
+    console.log("User ID:", userId);
+    // console.log("Debug Info:", debug()); // 某些版本 Clerk 支持打印 debug 信息
+    console.log("Cookies:", request.headers.get("cookie")); // 看看请求头里到底有没有 Cookie
+    console.log("--------------------------");
+
+    // 如果用户没登录，直接拒绝，保护你的 API 不被白嫖
+    if (!userId) {
+      return new Response("Unauthorized: Please sign in.", { status: 401 });
     }
 
-    const parsedBody = await safeParseJson<CreateSessionRequestBody>(request);
-    const { userId, sessionCookie: resolvedSessionCookie } =
-      await resolveUserId(request);
-    sessionCookie = resolvedSessionCookie;
+    // -------------------------------------------------------------
+    // 改动点 2: parse 请求体
+    // -------------------------------------------------------------
+    const parsedBody = await request.json();
     const resolvedWorkflowId =
       parsedBody?.workflow?.id ?? parsedBody?.workflowId ?? WORKFLOW_ID;
 
-    if (process.env.NODE_ENV !== "production") {
-      console.info("[create-session] handling request", {
-        resolvedWorkflowId,
-        body: JSON.stringify(parsedBody),
-      });
-    }
+    // -------------------------------------------------------------
+    // 3. 发送给 OpenAI / ChatKit
+    // -------------------------------------------------------------
+    const upstreamUrl = `${
+      process.env.CHATKIT_API_BASE || "https://api.openai.com"
+    }/v1/chatkit/sessions`;
 
-    if (!resolvedWorkflowId) {
-      return buildJsonResponse(
-        { error: "Missing workflow id" },
-        400,
-        { "Content-Type": "application/json" },
-        sessionCookie
-      );
-    }
+    const payload: any = {
+      workflow: { id: resolvedWorkflowId },
+      user: userId, // 告诉 OpenAI 这个用户的 Clerk ID，方便后台统计
+      chatkit_configuration: parsedBody?.chatkit_configuration || {},
+    };
 
-    const apiBase = process.env.CHATKIT_API_BASE ?? DEFAULT_CHATKIT_BASE;
-    const url = `${apiBase}/v1/chatkit/sessions`;
-    const upstreamResponse = await fetch(url, {
+    const upstreamResponse = await fetch(upstreamUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${openaiApiKey}`,
         "OpenAI-Beta": "chatkit_beta=v1",
       },
-      body: JSON.stringify({
-        workflow: { id: resolvedWorkflowId },
-        user: userId,
-        chatkit_configuration: {
-          file_upload: {
-            enabled:
-              parsedBody?.chatkit_configuration?.file_upload?.enabled ?? false,
-          },
-        },
-      }),
+      body: JSON.stringify(payload),
     });
 
-    if (process.env.NODE_ENV !== "production") {
-      console.info("[create-session] upstream response", {
-        status: upstreamResponse.status,
-        statusText: upstreamResponse.statusText,
-      });
-    }
-
-    const upstreamJson = (await upstreamResponse.json().catch(() => ({}))) as
-      | Record<string, unknown>
-      | undefined;
+    const upstreamJson = await upstreamResponse.json();
+    console.log(
+      `[Clerk+Supabase] Received response from ChatKit upstream:`,
+      upstreamJson
+    );
 
     if (!upstreamResponse.ok) {
-      const upstreamError = extractUpstreamError(upstreamJson);
-      console.error("OpenAI ChatKit session creation failed", {
+      console.error("Upstream Error:", upstreamJson);
+      return new Response(JSON.stringify(upstreamJson), {
         status: upstreamResponse.status,
-        statusText: upstreamResponse.statusText,
-        body: upstreamJson,
       });
-      return buildJsonResponse(
-        {
-          error:
-            upstreamError ??
-            `Failed to create session: ${upstreamResponse.statusText}`,
-          details: upstreamJson,
-        },
-        upstreamResponse.status,
-        { "Content-Type": "application/json" },
-        sessionCookie
-      );
     }
 
-    const clientSecret = upstreamJson?.client_secret ?? null;
-    const expiresAfter = upstreamJson?.expires_after ?? null;
-    const responsePayload = {
-      client_secret: clientSecret,
-      expires_after: expiresAfter,
-    };
-
-    return buildJsonResponse(
-      responsePayload,
-      200,
-      { "Content-Type": "application/json" },
-      sessionCookie
-    );
+    return new Response(JSON.stringify(upstreamJson), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (error) {
-    console.error("Create session error", error);
-    return buildJsonResponse(
-      { error: "Unexpected error" },
-      500,
-      { "Content-Type": "application/json" },
-      sessionCookie
-    );
+    console.error("Internal Error:", error);
+    return new Response(JSON.stringify({ error: "Internal Server Error" }), {
+      status: 500,
+    });
   }
 }
 

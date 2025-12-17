@@ -202,6 +202,7 @@ export function ChatKitPanel({
         });
 
         const raw = await response.text();
+        console.log("[ChatKitPanel] createSession raw body:", raw);
 
         if (isDev) {
           console.info("[ChatKitPanel] createSession response", {
@@ -253,9 +254,12 @@ export function ChatKitPanel({
         }
         throw error instanceof Error ? error : new Error(detail);
       } finally {
+        console.log("[ChatKitPanel] getClientSecret completed");
+        console.log({ isMounted: isMountedRef.current, currentSecret });
         if (isMountedRef.current && !currentSecret) {
           setIsInitializingSession(false);
         }
+        console.log("[ChatKitPanel] isInitializingSession set to false");
       }
     },
     [isWorkflowConfigured, setErrorState]
@@ -343,6 +347,13 @@ export function ChatKitPanel({
     });
   }
 
+  useEffect(() => {
+    if (chatkit.control && isInitializingSession) {
+      console.log("[ChatKitPanel] ChatKit ready → stop loading");
+      setIsInitializingSession(false);
+    }
+  }, [chatkit.control, isInitializingSession]);
+  
   return (
     <div className="relative pb-8 flex h-[90vh] w-full rounded-2xl flex-col overflow-hidden bg-white shadow-sm transition-colors dark:bg-slate-900">
       <ChatKit

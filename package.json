@@ -11,6 +11,7 @@
   "dependencies": {
     "@clerk/nextjs": "^6.36.2",
     "@openai/chatkit-react": ">=1.1.1 <2.0.0",
+    "@supabase/supabase-js": "^2.87.1",
     "next": "^15.5.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"

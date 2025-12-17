@@ -21,7 +21,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      afterSignOutUrl="/sign-in"
+    >
       <html lang="en">
         <head>
           <Script
@@ -40,7 +42,9 @@ export default function RootLayout({
               </SignUpButton>
             </SignedOut>
             <SignedIn>
-              <UserButton />
+              <div className="flex items-center gap-3">
+                <UserButton />
+              </div>
             </SignedIn>
           </header>
           {children}
