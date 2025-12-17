@@ -12,6 +12,7 @@ import {
 } from "@/lib/config";
 import { ErrorOverlay } from "./ErrorOverlay";
 import type { ColorScheme } from "@/hooks/useColorScheme";
+import { useFontSize } from "@/contexts/FontSizeContext";
 
 export type FactAction = {
   type: "save";
@@ -49,6 +50,7 @@ export function ChatKitPanel({
   onResponseEnd,
   onThemeRequest,
 }: ChatKitPanelProps) {
+  const { fontSize } = useFontSize();
   const processedFacts = useRef(new Set<string>());
   const [errors, setErrors] = useState<ErrorState>(() => createInitialErrors());
   const [isInitializingSession, setIsInitializingSession] = useState(true);
@@ -265,11 +267,13 @@ export function ChatKitPanel({
     [isWorkflowConfigured, setErrorState]
   );
 
+  const baseSize = fontSize === "small" ? 14 : fontSize === "large" ? 18 : 16;
+  
   const chatkit = useChatKit({
     api: { getClientSecret },
     theme: {
       colorScheme: theme,
-      ...getThemeConfig(theme),
+      ...getThemeConfig(theme, baseSize),
     },
     startScreen: {
       greeting: GREETING,
@@ -355,7 +359,7 @@ export function ChatKitPanel({
   }, [chatkit.control, isInitializingSession]);
   
   return (
-    <div className="relative pb-8 flex h-[90vh] w-full rounded-2xl flex-col overflow-hidden bg-white shadow-sm transition-colors dark:bg-slate-900">
+    <div className="relative pb-8 flex h-[90vh] w-full rounded-2xl flex-col overflow-hidden bg-white shadow-sm transition-colors dark:bg-slate-900 z-0">
       <ChatKit
         key={widgetInstanceKey}
         control={chatkit.control}

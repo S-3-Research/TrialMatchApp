@@ -1,0 +1,50 @@
+{
+  "latestUpdates": [
+    {
+      "version": "v0.2.0",
+      "date": "December 17, 2025",
+      "title": "Accessibility & Theme Improvements",
+      "isLatest": true,
+      "items": [
+        "Added font size selector for elderly-friendly experience",
+        "Customized ChatKit theme to match TrialChat medical aesthetic",
+        "Updated starter prompts and greetings for ADRD clinical trials",
+        "Implemented FontSizeContext for global font size management"
+      ]
+    },
+    {
+      "version": "v0.1.0",
+      "date": "December 10, 2025",
+      "title": "Initial Release",
+      "isLatest": false,
+      "items": [
+        "Created TrialChat homepage with medical-themed design",
+        "Integrated OpenAI ChatKit for conversational AI",
+        "Implemented Clerk authentication",
+        "Set up session management with cookies"
+      ]
+    }
+  ],
+  "plannedFeatures": [
+    {
+      "title": "Session Management on Sign-out",
+      "description": "Clear ChatKit session cookie when user signs out"
+    },
+    {
+      "title": "User Profile & Preferences",
+      "description": "Save user health information and trial preferences"
+    },
+    {
+      "title": "Side panel for Saved Facts and other Integrations sucha as cognitive tests",
+      "description": "Implement side panel to display saved facts and integrate cognitive tests"
+    }
+  ],
+  "knownIssues": [
+    {
+      "title": "Homepage Height Adjustment",
+      "description": "Homepage content height needs fine-tuning to prevent scrollbar",
+      "priority": "Low",
+      "severity": "info"
+    }
+  ]
+}
