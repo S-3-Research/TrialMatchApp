@@ -320,6 +320,32 @@ export function ChatKitPanel({
         return { success: true };
       }
 
+      if (invocation.name === "get_weather") {
+        try {
+          if (isDev) {
+            console.debug("[ChatKitPanel] get_weather", invocation.params);
+          }
+          
+          // 调用服务器端API route
+          const response = await fetch("/api/tools", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              toolName: "get_weather",
+              params: invocation.params,
+            }),
+          });
+
+          const data = await response.json();
+          return data;
+        } catch (error) {
+          console.error("[ChatKitPanel] get_weather error", error);
+          return { success: false, error: "Failed to fetch weather data" };
+        }
+      }
+
       return { success: false };
     },
     onResponseEnd: () => {
