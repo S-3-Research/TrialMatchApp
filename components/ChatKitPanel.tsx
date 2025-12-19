@@ -339,6 +339,26 @@ export function ChatKitPanel({
           });
 
           const data = await response.json();
+          
+          // 如果成功，添加widget引用
+          if (data.success) {
+            return {
+              success: true,
+              widget: {
+                name: "weatherForecast",
+                state: {
+                  background: data.background,
+                  conditionImage: data.conditionImage,
+                  lowTemperature: data.lowTemperature,
+                  highTemperature: data.highTemperature,
+                  location: data.location,
+                  conditionDescription: data.conditionDescription,
+                  forecast: data.forecast
+                }
+              }
+            };
+          }
+          
           return data;
         } catch (error) {
           console.error("[ChatKitPanel] get_weather error", error);

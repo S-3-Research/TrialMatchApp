@@ -37,6 +37,10 @@
     {
       "title": "Side panel for Saved Facts and other Integrations sucha as cognitive tests",
       "description": "Implement side panel to display saved facts and integrate cognitive tests"
+    },
+    {
+      "title": "Enhanced Accessibility Features",
+      "description": "Add more accessibility options for elderly users such as voice commands"
     }
   ],
   "knownIssues": [
