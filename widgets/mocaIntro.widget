@@ -1,0 +1,115 @@
+{
+  "version": "1.0",
+  "name": "MoCA intro",
+  "template": "{\"type\":\"Card\",\"size\":\"sm\",\"children\":[{\"type\":\"Col\",\"gap\":2,\"children\":[{\"type\":\"Title\",\"value\":{{ (title) | tojson }},\"size\":\"md\"},{\"type\":\"Text\",\"value\":{{ (description) | tojson }},\"color\":\"secondary\"}]},{\"type\":\"Row\",\"gap\":2,\"padding\":{\"y\":1},\"children\":[{%- set _c -%}{%-for item in meta -%}{%-set idx = loop.index0 -%},{\"type\":\"Badge\",\"key\":{{ (idx) | tojson }},\"label\":{{ (item) | tojson }},\"variant\":\"soft\"}{%-endfor-%}{%- endset -%}{{- (_c[1:] if _c and _c[0] == ',' else _c) -}}]},{\"type\":\"Divider\"},{\"type\":\"Col\",\"gap\":2,\"children\":[{\"type\":\"Text\",\"value\":{{ (disclaimer) | tojson }},\"size\":\"sm\",\"color\":\"tertiary\"},{\"type\":\"Button\",\"label\":{{ (actionLabel) | tojson }},\"style\":\"primary\",\"onClickAction\":{\"type\":{{ (actionType) | tojson }},\"handler\":\"client\"}}]}]}",
+  "jsonSchema": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string"
+      },
+      "description": {
+        "type": "string"
+      },
+      "meta": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "disclaimer": {
+        "type": "string"
+      },
+      "actionLabel": {
+        "type": "string"
+      },
+      "actionType": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "title",
+      "description",
+      "meta",
+      "disclaimer",
+      "actionLabel",
+      "actionType"
+    ],
+    "additionalProperties": false
+  },
+  "outputJsonPreview": {
+    "type": "Card",
+    "size": "sm",
+    "children": [
+      {
+        "type": "Col",
+        "gap": 2,
+        "children": [
+          {
+            "type": "Title",
+            "value": "MoCA Screening",
+            "size": "md"
+          },
+          {
+            "type": "Text",
+            "value": "Quick cognitive screening for memory, attention, language, and orientation.",
+            "color": "secondary"
+          }
+        ]
+      },
+      {
+        "type": "Row",
+        "gap": 2,
+        "padding": {
+          "y": 1
+        },
+        "children": [
+          {
+            "type": "Badge",
+            "key": 0,
+            "label": "≈10 min",
+            "variant": "soft"
+          },
+          {
+            "type": "Badge",
+            "key": 1,
+            "label": "30 tasks",
+            "variant": "soft"
+          },
+          {
+            "type": "Badge",
+            "key": 2,
+            "label": "Screens mild cognitive impairment",
+            "variant": "soft"
+          }
+        ]
+      },
+      {
+        "type": "Divider"
+      },
+      {
+        "type": "Col",
+        "gap": 2,
+        "children": [
+          {
+            "type": "Text",
+            "value": "Screening only — not a diagnosis. See a clinician if you’re concerned.",
+            "size": "sm",
+            "color": "tertiary"
+          },
+          {
+            "type": "Button",
+            "label": "Take the test",
+            "style": "primary",
+            "onClickAction": {
+              "type": "moca.start",
+              "handler": "client"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "encodedWidget": "eyJpZCI6IndpZ19iN3NlcDB1cCIsIm5hbWUiOiJNb0NBIGludHJvIChjb3B5KSIsInZpZXciOiI8Q2FyZCBzaXplPVwic21cIj5cbiAgPENvbCBnYXA9ezJ9PlxuICAgIDxUaXRsZSB2YWx1ZT17dGl0bGV9IHNpemU9XCJtZFwiIC8-XG4gICAgPFRleHQgdmFsdWU9e2Rlc2NyaXB0aW9ufSBjb2xvcj1cInNlY29uZGFyeVwiIC8-XG4gIDwvQ29sPlxuICA8Um93IGdhcD17Mn0gcGFkZGluZz17eyB5OiAxIH19PlxuICAgIHttZXRhLm1hcCgoaXRlbSwgaWR4KSA9PiAoXG4gICAgICA8QmFkZ2Uga2V5PXtpZHh9IGxhYmVsPXtpdGVtfSB2YXJpYW50PVwic29mdFwiIC8-XG4gICAgKSl9XG4gIDwvUm93PlxuICA8RGl2aWRlciAvPlxuICA8Q29sIGdhcD17Mn0-XG4gICAgPFRleHQgdmFsdWU9e2Rpc2NsYWltZXJ9IHNpemU9XCJzbVwiIGNvbG9yPVwidGVydGlhcnlcIiAvPlxuICAgIDxCdXR0b25cbiAgICAgIGxhYmVsPXthY3Rpb25MYWJlbH1cbiAgICAgIHN0eWxlPVwicHJpbWFyeVwiXG4gICAgICBvbkNsaWNrQWN0aW9uPXt7IHR5cGU6IGFjdGlvblR5cGUsIGhhbmRsZXI6IFwiY2xpZW50XCIgfX1cbiAgICAvPlxuICA8L0NvbD5cbjwvQ2FyZD4iLCJkZWZhdWx0U3RhdGUiOnsidGl0bGUiOiJNb0NBIFNjcmVlbmluZyIsImRlc2NyaXB0aW9uIjoiUXVpY2sgY29nbml0aXZlIHNjcmVlbmluZyBmb3IgbWVtb3J5LCBhdHRlbnRpb24sIGxhbmd1YWdlLCBhbmQgb3JpZW50YXRpb24uIiwibWV0YSI6WyLiiYgxMCBtaW4iLCIzMCB0YXNrcyIsIlNjcmVlbnMgbWlsZCBjb2duaXRpdmUgaW1wYWlybWVudCJdLCJkaXNjbGFpbWVyIjoiU2NyZWVuaW5nIG9ubHkg4oCUIG5vdCBhIGRpYWdub3Npcy4gU2VlIGEgY2xpbmljaWFuIGlmIHlvdeKAmXJlIGNvbmNlcm5lZC4iLCJhY3Rpb25MYWJlbCI6IlRha2UgdGhlIHRlc3QiLCJhY3Rpb25UeXBlIjoibW9jYS5zdGFydCJ9LCJzdGF0ZXMiOltdLCJzY2hlbWEiOiJpbXBvcnQgeyB6IH0gZnJvbSBcInpvZFwiXG5cbmNvbnN0IFdpZGdldFN0YXRlID0gei5zdHJpY3RPYmplY3Qoe1xuICB0aXRsZTogei5zdHJpbmcoKSxcbiAgZGVzY3JpcHRpb246IHouc3RyaW5nKCksXG4gIG1ldGE6IHouYXJyYXkoei5zdHJpbmcoKSksXG4gIGRpc2NsYWltZXI6IHouc3RyaW5nKCksXG4gIGFjdGlvbkxhYmVsOiB6LnN0cmluZygpLFxuICBhY3Rpb25UeXBlOiB6LnN0cmluZygpLFxufSlcblxuZXhwb3J0IGRlZmF1bHQgV2lkZ2V0U3RhdGUiLCJqc29uU2NoZW1hIjp7fSwic2NoZW1hTW9kZSI6InpvZCIsInNjaGVtYVZhbGlkaXR5IjoidmFsaWQiLCJ2aWV3VmFsaWRpdHkiOiJ2YWxpZCIsImRlZmF1bHRTdGF0ZVZhbGlkaXR5IjoidmFsaWQifQ"
+}

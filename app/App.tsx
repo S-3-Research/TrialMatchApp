@@ -62,6 +62,7 @@ export default function App() {
                 onWidgetAction={handleWidgetAction}
                 onResponseEnd={handleResponseEnd}
                 onThemeRequest={setScheme}
+                onOpenResourcePanel={() => setIsResourcePanelOpen(true)}
               />
             </div>
 

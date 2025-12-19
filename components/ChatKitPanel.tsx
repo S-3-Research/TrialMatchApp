@@ -25,6 +25,7 @@ type ChatKitPanelProps = {
   onWidgetAction: (action: FactAction) => Promise<void>;
   onResponseEnd: () => void;
   onThemeRequest: (scheme: ColorScheme) => void;
+  onOpenResourcePanel: () => void;
 };
 
 type ErrorState = {
@@ -49,6 +50,7 @@ export function ChatKitPanel({
   onWidgetAction,
   onResponseEnd,
   onThemeRequest,
+  onOpenResourcePanel,
 }: ChatKitPanelProps) {
   const { fontSize } = useFontSize();
   const processedFacts = useRef(new Set<string>());
@@ -288,6 +290,61 @@ export function ChatKitPanel({
     },
     threadItemActions: {
       feedback: false,
+    },
+    widgets: {
+      onAction: async (action: { type: string; [key: string]: unknown }) => {
+        if (isDev) {
+          console.info("[ChatKitPanel] widget action received:", action);
+        }
+
+        // Handle MOCA test action
+        if (action.type === "moca.start") {
+          if (isDev) {
+            console.debug("[ChatKitPanel] opening resource panel for MOCA test");
+          }
+          onOpenResourcePanel();
+          return;
+        }
+
+        // Handle weather refresh action
+        if (action.type === "refresh_weather") {
+          try {
+            const location = action.location || "San Francisco";
+            if (isDev) {
+              console.debug("[ChatKitPanel] refreshing weather for:", location);
+            }
+
+            const response = await fetch("/api/tools", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                toolName: "get_weather",
+                params: { location },
+              }),
+            });
+
+            const data = await response.json();
+
+            // Note: Cannot access chatkit.control here, so we can't send actions back
+            if (data.success) {
+              console.debug("[ChatKitPanel] weather data refreshed:", data);
+            }
+          } catch (error) {
+            console.error("[ChatKitPanel] weather refresh error:", error);
+          }
+          return;
+        }
+
+        // Handle legacy save action (backward compatibility)
+        if (action.type === "save") {
+          const factAction = action as FactAction;
+          await onWidgetAction(factAction);
+          return;
+        }
+
+        // Warn about unhandled action types
+        console.warn("[ChatKitPanel] unhandled widget action type:", action.type);
+      },
     },
     onClientTool: async (invocation: {
       name: string;
