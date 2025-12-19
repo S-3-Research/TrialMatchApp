@@ -72,10 +72,10 @@ async function handleGetWeather(params: Record<string, unknown>) {
   const unit = String(params.unit ?? "f");
 
   // simulate error
-  return NextResponse.json(
-    { success: false, error: "Weather data not found for this location" },
-    { status: 404 }
-  );
+  // return NextResponse.json(
+  //   { success: false, error: "Weather data not found for this location" },
+  //   { status: 404 }
+  // );
 
   if (!location) {
     return NextResponse.json(
