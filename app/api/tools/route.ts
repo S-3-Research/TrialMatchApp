@@ -161,7 +161,7 @@ async function handleGetWeather(params: Record<string, unknown>) {
 
     // Build forecast array
     const forecast =
-      forecastData?.list?.slice(0, 5).map((item: any) => ({
+      forecastData?.list?.slice(0, 5).map((item: { weather: Array<{ main: string }>; main: { temp: number } }) => ({
         conditionImage: getWeatherIcon(item.weather[0].main),
         temperature: `${Math.round(item.main.temp)}${unitSymbol}`,
       })) || [];

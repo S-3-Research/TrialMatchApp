@@ -32,7 +32,7 @@ export default function Home() {
           Your AI-Powered Clinical Trial Navigator
         </p>
         <p className="mx-auto mb-12 max-w-2xl text-lg leading-relaxed text-slate-600 dark:text-slate-300">
-          Empowering older adults and caregivers to participate in Alzheimer's
+          Empowering older adults and caregivers to participate in Alzheimer&apos;s
           disease and related dementias (ADRD) clinical trials through
           personalized education, trial matching, and simplified enrollment.
         </p>

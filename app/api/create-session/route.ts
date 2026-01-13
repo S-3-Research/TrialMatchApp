@@ -61,7 +61,7 @@ export async function POST(request: Request): Promise<Response> {
       process.env.CHATKIT_API_BASE || "https://api.openai.com"
     }/v1/chatkit/sessions`;
 
-    const payload: any = {
+    const payload: Record<string, unknown> = {
       workflow: { id: resolvedWorkflowId },
       user: userId, // 告诉 OpenAI 这个用户的 Clerk ID，方便后台统计
       chatkit_configuration: parsedBody?.chatkit_configuration || {},
