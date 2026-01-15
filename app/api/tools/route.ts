@@ -1,6 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+import { auth } from "@clerk/nextjs/server";
+import type { UserProfile, UserTrialInterest } from "@/lib/types/supabase";
 
 export const runtime = "edge";
+
+// Initialize Supabase client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+/**
+ * Verify that the requested clerk_user_id matches the authenticated user
+ */
+async function verifyUserAccess(requestedUserId: string): Promise<{ authorized: boolean; currentUserId: string | null }> {
+  const { userId } = await auth();
+  
+  if (!userId) {
+    return { authorized: false, currentUserId: null };
+  }
+  
+  // Allow access only if requesting own data
+  return {
+    authorized: userId === requestedUserId,
+    currentUserId: userId
+  };
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,6 +44,19 @@ export async function POST(request: NextRequest) {
       case "get_weather":
         return handleGetWeather(params);
 
+      // Supabase tools
+      case "get_user_profile":
+        return handleGetUserProfile(params);
+      
+      case "save_user_profile":
+        return handleSaveUserProfile(params);
+      
+      case "get_trial_interests":
+        return handleGetTrialInterests(params);
+      
+      case "save_trial_interest":
+        return handleSaveTrialInterest(params);
+
       // Add more tool handlers here
       default:
         return NextResponse.json(
@@ -34,6 +72,297 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// =====================================================
+// Supabase Tool Handlers
+// =====================================================
+
+/**
+ * Get user profile from Supabase
+ * Params: { clerk_user_id?: string } (可选，不传则使用当前登录用户)
+ */
+async function handleGetUserProfile(params: Record<string, unknown>) {
+  // 获取当前登录用户
+  const { userId: currentUserId } = await auth();
+  
+  if (!currentUserId) {
+    return NextResponse.json(
+      { success: false, error: "Not authenticated" },
+      { status: 401 }
+    );
+  }
+
+  // 使用传入的 clerk_user_id 或当前用户 ID
+  const clerkUserId = String(params.clerk_user_id ?? currentUserId);
+
+  // Security: Verify user can only access their own data
+  if (clerkUserId !== currentUserId) {
+    return NextResponse.json(
+      { success: false, error: "Unauthorized: You can only access your own data" },
+      { status: 403 }
+    );
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("user_profiles")
+      .select("*")
+      .eq("clerk_user_id", clerkUserId)
+      .single();
+
+    if (error) {
+      // If user doesn't exist, return null data (not an error)
+      if (error.code === "PGRST116") {
+        return NextResponse.json({
+          success: true,
+          data: null,
+          message: "User profile not found",
+        });
+      }
+      throw error;
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: data as UserProfile,
+    });
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to fetch user profile" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * Save or update user profile in Supabase
+ * Params: { clerk_user_id?: string, ...profile_data } (clerk_user_id 可选)
+ */
+async function handleSaveUserProfile(params: Record<string, unknown>) {
+  // 获取当前登录用户
+  const { userId: currentUserId } = await auth();
+  
+  if (!currentUserId) {
+    return NextResponse.json(
+      { success: false, error: "Not authenticated" },
+      { status: 401 }
+    );
+  }
+
+  // 使用传入的 clerk_user_id 或当前用户 ID
+  const clerkUserId = String(params.clerk_user_id ?? currentUserId);
+
+  // Security: Verify user can only modify their own data
+  if (clerkUserId !== currentUserId) {
+    return NextResponse.json(
+      { success: false, error: "Unauthorized: You can only modify your own data" },
+      { status: 403 }
+    );
+  }
+
+  try {
+    // Prepare profile data
+    const profileData: Partial<UserProfile> = {
+      clerk_user_id: clerkUserId,
+      full_name: params.full_name ? String(params.full_name) : undefined,
+      email: params.email ? String(params.email) : undefined,
+      age: params.age ? Number(params.age) : undefined,
+      gender: params.gender ? String(params.gender) : undefined,
+      has_adrd: params.has_adrd !== undefined ? Boolean(params.has_adrd) : undefined,
+      diagnosis_type: params.diagnosis_type ? String(params.diagnosis_type) : undefined,
+      diagnosed_date: params.diagnosed_date ? String(params.diagnosed_date) : undefined,
+      current_medications: params.current_medications as Record<string, unknown> | undefined,
+      is_caregiver: params.is_caregiver !== undefined ? Boolean(params.is_caregiver) : undefined,
+      relationship_to_patient: params.relationship_to_patient ? String(params.relationship_to_patient) : undefined,
+      preferred_language: params.preferred_language ? String(params.preferred_language) : undefined,
+      location: params.location as UserProfile['location'] | undefined,
+      mobility_status: params.mobility_status as UserProfile['mobility_status'] | undefined,
+      travel_radius_miles: params.travel_radius_miles ? Number(params.travel_radius_miles) : undefined,
+      last_active_at: new Date().toISOString(),
+    };
+
+    // Remove undefined values
+    Object.keys(profileData).forEach(
+      (key) => profileData[key as keyof UserProfile] === undefined && delete profileData[key as keyof UserProfile]
+    );
+
+    // Upsert (insert or update)
+    const { data, error } = await supabase
+      .from("user_profiles")
+      .upsert(profileData, {
+        onConflict: "clerk_user_id",
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return NextResponse.json({
+      success: true,
+      data: data as UserProfile,
+      message: "User profile saved successfully",
+    });
+  } catch (error) {
+    console.error("Error saving user profile:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to save user profile" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * Get user's trial interests
+ * Params: { clerk_user_id?: string, trial_status?: string }
+ */
+async function handleGetTrialInterests(params: Record<string, unknown>) {
+  // 获取当前登录用户
+  const { userId: currentUserId } = await auth();
+  
+  if (!currentUserId) {
+    return NextResponse.json(
+      { success: false, error: "Not authenticated" },
+      { status: 401 }
+    );
+  }
+
+  // 使用传入的 clerk_user_id 或当前用户 ID
+  const clerkUserId = String(params.clerk_user_id ?? currentUserId);
+  const trialStatus = params.trial_status ? String(params.trial_status) : undefined;
+
+  // Security: Verify user can only access their own data
+  if (clerkUserId !== currentUserId) {
+    return NextResponse.json(
+      { success: false, error: "Unauthorized: You can only access your own data" },
+      { status: 403 }
+    );
+  }
+
+  try {
+    let query = supabase
+      .from("user_trial_interests")
+      .select("*")
+      .eq("clerk_user_id", clerkUserId)
+      .order("interested_at", { ascending: false });
+
+    if (trialStatus) {
+      query = query.eq("trial_status", trialStatus);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
+    return NextResponse.json({
+      success: true,
+      data: data as UserTrialInterest[],
+      count: data.length,
+    });
+  } catch (error) {
+    console.error("Error fetching trial interests:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to fetch trial interests" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * Save or update trial interest
+ * Params: { clerk_user_id?, trial_id, trial_name?, trial_status?, user_notes?, match_score? }
+ */
+async function handleSaveTrialInterest(params: Record<string, unknown>) {
+  // 获取当前登录用户
+  const { userId: currentUserId } = await auth();
+  
+  if (!currentUserId) {
+    return NextResponse.json(
+      { success: false, error: "Not authenticated" },
+      { status: 401 }
+    );
+  }
+
+  // 使用传入的 clerk_user_id 或当前用户 ID
+  const clerkUserId = String(params.clerk_user_id ?? currentUserId);
+  const trialId = String(params.trial_id ?? "");
+
+  if (!trialId) {
+    return NextResponse.json(
+      { success: false, error: "trial_id is required" },
+      { status: 400 }
+    );
+  }
+
+  // Security: Verify user can only modify their own data
+  if (clerkUserId !== currentUserId) {
+    return NextResponse.json(
+      { success: false, error: "Unauthorized: You can only modify your own data" },
+      { status: 403 }
+    );
+  }
+
+  try {
+    const trialData: Partial<UserTrialInterest> = {
+      clerk_user_id: clerkUserId,
+      trial_id: trialId,
+      trial_name: params.trial_name ? String(params.trial_name) : undefined,
+      trial_status: params.trial_status as UserTrialInterest['trial_status'] | undefined,
+      user_notes: params.user_notes ? String(params.user_notes) : undefined,
+      match_score: params.match_score ? Number(params.match_score) : undefined,
+    };
+
+    // Remove undefined values
+    Object.keys(trialData).forEach(
+      (key) => trialData[key as keyof UserTrialInterest] === undefined && delete trialData[key as keyof UserTrialInterest]
+    );
+
+    // Check if already exists
+    const { data: existing } = await supabase
+      .from("user_trial_interests")
+      .select("id")
+      .eq("clerk_user_id", clerkUserId)
+      .eq("trial_id", trialId)
+      .single();
+
+    let result;
+    if (existing) {
+      // Update existing
+      result = await supabase
+        .from("user_trial_interests")
+        .update(trialData)
+        .eq("id", existing.id)
+        .select()
+        .single();
+    } else {
+      // Insert new
+      result = await supabase
+        .from("user_trial_interests")
+        .insert(trialData)
+        .select()
+        .single();
+    }
+
+    if (result.error) throw result.error;
+
+    return NextResponse.json({
+      success: true,
+      data: result.data as UserTrialInterest,
+      message: "Trial interest saved successfully",
+    });
+  } catch (error) {
+    console.error("Error saving trial interest:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to save trial interest" },
+      { status: 500 }
+    );
+  }
+}
+
+// =====================================================
+// Weather Tool Handler (existing)
+// =====================================================
+
 
 // Helper function to map weather condition to icon
 function getWeatherIcon(condition: string): string {

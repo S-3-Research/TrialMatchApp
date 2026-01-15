@@ -3,9 +3,15 @@ import { NextResponse } from 'next/server'
 
 const isProtectedRoute = createRouteMatcher([
   '/dashboard(.*)', 
-  '/api(.*)', // <--- 重点：明确把 API 加入保护名单
+  '/api(.*)', // 所有 API 都需要认证保护
   '/chat(.*)',
   // '/(.*)'  <--- 建议暂时注释掉这个，因为它太霸道了，容易误伤登录页
+]);
+
+// API 路由白名单（不需要 Clerk 认证的公开 API）
+// 注意：/api/tools 不在这里，需要 Clerk 认证以保护用户数据
+const isPublicApiRoute = createRouteMatcher([
+  // 未来如果有真正的公开 API，在这里添加
 ]);
 
 // 开发阶段的简单密码保护
@@ -44,6 +50,12 @@ export default clerkMiddleware(async (auth, req) => {
   // 先检查开发密码（如果设置了）
   const devPasswordResponse = checkDevPassword(req);
   if (devPasswordResponse) return devPasswordResponse;
+
+  // 公开 API 路由不需要 Clerk 认证
+  if (isPublicApiRoute(req)) {
+    console.log("Public API route, skipping Clerk auth:", req.url);
+    return;
+  }
 
   // 然后执行 Clerk 认证
   if (isProtectedRoute(req)) await auth.protect()
