@@ -9,9 +9,9 @@ const isProtectedRoute = createRouteMatcher([
 ]);
 
 // API 路由白名单（不需要 Clerk 认证的公开 API）
-// 注意：/api/tools 不在这里，需要 Clerk 认证以保护用户数据
 const isPublicApiRoute = createRouteMatcher([
-  // 未来如果有真正的公开 API，在这里添加
+  '/api/create-session',  // ChatKit 创建 session（在登录前调用）
+  // /api/tools 需要认证保护，因为用户已登录后才能调用
 ]);
 
 // 开发阶段的简单密码保护

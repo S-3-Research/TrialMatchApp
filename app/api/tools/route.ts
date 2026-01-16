@@ -28,16 +28,21 @@ async function verifyUserAccess(requestedUserId: string): Promise<{ authorized: 
 }
 
 export async function POST(request: NextRequest) {
+  console.log("🔧 [API/Tools] Request received:", request.url);
   try {
     const body = await request.json();
+    console.log("🔧 [API/Tools] Request body:", JSON.stringify(body, null, 2));
     const { toolName, params } = body;
 
     if (!toolName) {
+      console.log("❌ [API/Tools] No tool name provided");
       return NextResponse.json(
         { success: false, error: "Tool name is required" },
         { status: 400 }
       );
     }
+
+    console.log(`🔧 [API/Tools] Calling tool: ${toolName}`);
 
     // Handle different tools
     switch (toolName) {
@@ -59,13 +64,14 @@ export async function POST(request: NextRequest) {
 
       // Add more tool handlers here
       default:
+        console.log(`❌ [API/Tools] Unknown tool: ${toolName}`);
         return NextResponse.json(
           { success: false, error: `Unknown tool: ${toolName}` },
           { status: 400 }
         );
     }
   } catch (error) {
-    console.error("Error handling tool request:", error);
+    console.error("❌ [API/Tools] Error handling tool request:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error" },
       { status: 500 }
@@ -83,8 +89,8 @@ export async function POST(request: NextRequest) {
  */
 async function handleGetUserProfile(params: Record<string, unknown>) {
   // 获取当前登录用户
+  console.log("Fetching user profile with params:", params);
   const { userId: currentUserId } = await auth();
-  
   if (!currentUserId) {
     return NextResponse.json(
       { success: false, error: "Not authenticated" },

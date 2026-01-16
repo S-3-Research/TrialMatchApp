@@ -423,6 +423,99 @@ export function ChatKitPanel({
         }
       }
 
+      // Supabase tools
+      if (invocation.name === "get_user_profile") {
+        try {
+          if (isDev) {
+            console.debug("[ChatKitPanel] get_user_profile", invocation.params);
+          }
+          
+          const response = await fetch("/api/tools", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              toolName: "get_user_profile",
+              params: invocation.params,
+            }),
+          });
+
+          const data = await response.json();
+          return data;
+        } catch (error) {
+          console.error("[ChatKitPanel] get_user_profile error", error);
+          return { success: false, error: "Failed to get user profile" };
+        }
+      }
+
+      if (invocation.name === "save_user_profile") {
+        try {
+          if (isDev) {
+            console.debug("[ChatKitPanel] save_user_profile", invocation.params);
+          }
+          
+          const response = await fetch("/api/tools", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              toolName: "save_user_profile",
+              params: invocation.params,
+            }),
+          });
+
+          const data = await response.json();
+          return data;
+        } catch (error) {
+          console.error("[ChatKitPanel] save_user_profile error", error);
+          return { success: false, error: "Failed to save user profile" };
+        }
+      }
+
+      if (invocation.name === "get_trial_interests") {
+        try {
+          if (isDev) {
+            console.debug("[ChatKitPanel] get_trial_interests", invocation.params);
+          }
+          
+          const response = await fetch("/api/tools", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              toolName: "get_trial_interests",
+              params: invocation.params,
+            }),
+          });
+
+          const data = await response.json();
+          return data;
+        } catch (error) {
+          console.error("[ChatKitPanel] get_trial_interests error", error);
+          return { success: false, error: "Failed to get trial interests" };
+        }
+      }
+
+      if (invocation.name === "save_trial_interest") {
+        try {
+          if (isDev) {
+            console.debug("[ChatKitPanel] save_trial_interest", invocation.params);
+          }
+          
+          const response = await fetch("/api/tools", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              toolName: "save_trial_interest",
+              params: invocation.params,
+            }),
+          });
+
+          const data = await response.json();
+          return data;
+        } catch (error) {
+          console.error("[ChatKitPanel] save_trial_interest error", error);
+          return { success: false, error: "Failed to save trial interest" };
+        }
+      }
+
       return { success: false };
     },
     onResponseEnd: () => {

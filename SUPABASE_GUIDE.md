@@ -146,16 +146,15 @@
 ```json
 {
   "name": "get_user_profile",
-  "description": "Get user profile information from database including health status, caregiver status, preferences, and location",
+  "description": "Get user profile information from database including health status, caregiver status, preferences, and location. If clerk_user_id is not provided, automatically uses the current logged-in user.",
   "parameters": {
     "type": "object",
     "properties": {
       "clerk_user_id": {
         "type": "string",
-        "description": "The Clerk user ID"
+        "description": "The Clerk user ID (optional, defaults to current user)"
       }
-    },
-    "required": ["clerk_user_id"]
+    }
   }
 }
 ```
@@ -164,27 +163,90 @@
 ```json
 {
   "name": "save_user_profile",
-  "description": "Save or update user profile information to database",
+  "description": "Save or update user profile information to database. Can update any combination of fields. If clerk_user_id is not provided, automatically uses the current logged-in user.",
   "parameters": {
     "type": "object",
     "properties": {
       "clerk_user_id": {
         "type": "string",
-        "description": "The Clerk user ID"
+        "description": "The Clerk user ID (optional, defaults to current user)"
       },
-      "full_name": {"type": "string"},
-      "age": {"type": "number"},
-      "has_adrd": {"type": "boolean"},
-      "is_caregiver": {"type": "boolean"},
+      "full_name": {
+        "type": "string",
+        "description": "User's full name"
+      },
+      "email": {
+        "type": "string",
+        "description": "User's email address"
+      },
+      "age": {
+        "type": "number",
+        "description": "User's age in years"
+      },
+      "gender": {
+        "type": "string",
+        "description": "User's gender"
+      },
+      "has_adrd": {
+        "type": "boolean",
+        "description": "Whether user has Alzheimer's disease or related dementias"
+      },
+      "diagnosis_type": {
+        "type": "string",
+        "description": "Type of ADRD diagnosis if applicable (e.g., 'alzheimers', 'vascular_dementia')"
+      },
+      "diagnosed_date": {
+        "type": "string",
+        "description": "Date of diagnosis in ISO format (YYYY-MM-DD)"
+      },
+      "current_medications": {
+        "type": "object",
+        "description": "JSON object containing current medications"
+      },
+      "is_caregiver": {
+        "type": "boolean",
+        "description": "Whether user is a caregiver"
+      },
+      "relationship_to_patient": {
+        "type": "string",
+        "description": "Relationship to patient if user is a caregiver (e.g., 'spouse', 'child', 'professional')"
+      },
+      "preferred_language": {
+        "type": "string",
+        "description": "User's preferred language (e.g., 'en', 'es', 'zh')"
+      },
       "location": {
         "type": "object",
+        "description": "User's location information",
         "properties": {
-          "city": {"type": "string"},
-          "state": {"type": "string"}
+          "city": {
+            "type": "string",
+            "description": "City name"
+          },
+          "state": {
+            "type": "string",
+            "description": "State or province code (e.g., 'CA', 'NY')"
+          },
+          "country": {
+            "type": "string",
+            "description": "Country code (e.g., 'USA', 'CAN')"
+          },
+          "zip_code": {
+            "type": "string",
+            "description": "ZIP or postal code"
+          }
         }
+      },
+      "mobility_status": {
+        "type": "string",
+        "enum": ["mobile", "limited", "homebound"],
+        "description": "User's mobility status affecting trial participation"
+      },
+      "travel_radius_miles": {
+        "type": "number",
+        "description": "Maximum distance user can travel for trials (in miles)"
       }
-    },
-    "required": ["clerk_user_id"]
+    }
   }
 }
 ```
@@ -193,17 +255,20 @@
 ```json
 {
   "name": "get_trial_interests",
-  "description": "Get user's interested clinical trials",
+  "description": "Get user's interested clinical trials with optional filtering by status. If clerk_user_id is not provided, automatically uses the current logged-in user.",
   "parameters": {
     "type": "object",
     "properties": {
-      "clerk_user_id": {"type": "string"},
+      "clerk_user_id": {
+        "type": "string",
+        "description": "The Clerk user ID (optional, defaults to current user)"
+      },
       "trial_status": {
         "type": "string",
-        "enum": ["interested", "applied", "enrolled", "declined"]
+        "enum": ["interested", "applied", "enrolled", "declined"],
+        "description": "Filter trials by status (optional, returns all if not specified)"
       }
-    },
-    "required": ["clerk_user_id"]
+    }
   }
 }
 ```
@@ -212,21 +277,39 @@
 ```json
 {
   "name": "save_trial_interest",
-  "description": "Save user's interest in a clinical trial",
+  "description": "Save or update user's interest in a clinical trial. Creates new record or updates existing one based on trial_id. If clerk_user_id is not provided, automatically uses the current logged-in user.",
   "parameters": {
     "type": "object",
     "properties": {
-      "clerk_user_id": {"type": "string"},
-      "trial_id": {"type": "string"},
-      "trial_name": {"type": "string"},
+      "clerk_user_id": {
+        "type": "string",
+        "description": "The Clerk user ID (optional, defaults to current user)"
+      },
+      "trial_id": {
+        "type": "string",
+        "description": "Unique trial identifier (e.g., NCT number)"
+      },
+      "trial_name": {
+        "type": "string",
+        "description": "Display name of the clinical trial"
+      },
       "trial_status": {
         "type": "string",
-        "enum": ["interested", "applied", "enrolled", "declined"]
+        "enum": ["interested", "applied", "enrolled", "declined"],
+        "description": "User's interest/participation status for this trial"
       },
-      "match_score": {"type": "number"},
-      "user_notes": {"type": "string"}
+      "match_score": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1,
+        "description": "AI-calculated match score between 0 and 1"
+      },
+      "user_notes": {
+        "type": "string",
+        "description": "User's personal notes about this trial"
+      }
     },
-    "required": ["clerk_user_id", "trial_id"]
+    "required": ["trial_id"]
   }
 }
 ```
@@ -240,12 +323,16 @@ ChatKit 可以自动调用 `get_user_profile` 获取用户画像，了解：
 - 地理位置和出行能力
 - 语言偏好
 
+**无需传递 clerk_user_id**，系统会自动使用当前登录用户：
+```
+助手：调用 get_user_profile({})
+```
+
 ### 在对话中更新用户信息
 当用户提供新信息时，调用 `save_user_profile` 保存：
 ```
 用户："我今年 68 岁，住在加州旧金山"
 助手：调用 save_user_profile({
-  clerk_user_id: "user_xxx",
   age: 68,
   location: {city: "San Francisco", state: "CA"}
 })
@@ -256,14 +343,35 @@ ChatKit 可以自动调用 `get_user_profile` 获取用户画像，了解：
 ```
 用户："这个试验看起来不错，我想了解更多"
 助手：调用 save_trial_interest({
-  clerk_user_id: "user_xxx",
   trial_id: "NCT12345678",
+  trial_name: "Memory Enhancement Study",
   trial_status: "interested",
   match_score: 0.9
 })
 ```
 
-## 五、本地测试
+### 查询用户之前保存的试验
+```
+用户："我之前看过哪些试验？"
+助手：调用 get_trial_interests({})
+```
+
+## 五、配置要点
+
+### 🔑 关键特性
+1. **自动用户识别**：所有 tools 的 `clerk_user_id` 参数都是**可选的**，不传时自动使用当前登录用户
+2. **安全保护**：用户只能访问和修改自己的数据，尝试访问他人数据会返回 403 错误
+3. **增量更新**：`save_user_profile` 支持只更新部分字段，不需要传递完整数据
+4. **智能 Upsert**：保存操作会自动判断是插入新记录还是更新现有记录
+
+### 📝 在 Agent Builder 中配置步骤
+1. 打开 [Agent Builder](https://platform.openai.com/agent-builder)
+2. 选择你的 workflow
+3. 点击 "Add Tool" → "Client Tool"
+4. 复制上述 JSON 配置（每个 tool 一个）
+5. 保存并测试
+
+## 六、本地测试
 
 **重要：** 所有 API 现在都需要 Clerk 认证。您需要：
 
