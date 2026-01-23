@@ -397,7 +397,7 @@ export function ChatKitPanel({
 
           const data = await response.json();
           
-          // 如果成功，添加widget引用
+          // Return widget data - Agent Builder will handle the conversational text
           if (data.success) {
             return {
               success: true,
@@ -420,6 +420,123 @@ export function ChatKitPanel({
         } catch (error) {
           console.error("[ChatKitPanel] get_weather error", error);
           return { success: false, error: "Failed to fetch weather data" };
+        }
+      }
+
+      // Supabase tools
+      if (invocation.name === "get_user_profile") {
+        try {
+          if (isDev) {
+            console.debug("[ChatKitPanel] get_user_profile", invocation.params);
+          }
+          
+          const response = await fetch("/api/tools", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              toolName: "get_user_profile",
+              params: invocation.params,
+            }),
+          });
+
+          const data = await response.json();
+          return data;
+        } catch (error) {
+          console.error("[ChatKitPanel] get_user_profile error", error);
+          return { success: false, error: "Failed to get user profile" };
+        }
+      }
+
+      if (invocation.name === "save_user_profile") {
+        try {
+          if (isDev) {
+            console.debug("[ChatKitPanel] save_user_profile", invocation.params);
+          }
+          
+          const response = await fetch("/api/tools", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              toolName: "save_user_profile",
+              params: invocation.params,
+            }),
+          });
+
+          const data = await response.json();
+          return data;
+        } catch (error) {
+          console.error("[ChatKitPanel] save_user_profile error", error);
+          return { success: false, error: "Failed to save user profile" };
+        }
+      }
+
+      if (invocation.name === "get_trial_interests") {
+        try {
+          if (isDev) {
+            console.debug("[ChatKitPanel] get_trial_interests", invocation.params);
+          }
+          
+          const response = await fetch("/api/tools", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              toolName: "get_trial_interests",
+              params: invocation.params,
+            }),
+          });
+
+          const data = await response.json();
+          return data;
+        } catch (error) {
+          console.error("[ChatKitPanel] get_trial_interests error", error);
+          return { success: false, error: "Failed to get trial interests" };
+        }
+      }
+
+      if (invocation.name === "save_trial_interest") {
+        try {
+          if (isDev) {
+            console.debug("[ChatKitPanel] save_trial_interest", invocation.params);
+          }
+          
+          const response = await fetch("/api/tools", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              toolName: "save_trial_interest",
+              params: invocation.params,
+            }),
+          });
+
+          const data = await response.json();
+          return data;
+        } catch (error) {
+          console.error("[ChatKitPanel] save_trial_interest error", error);
+          return { success: false, error: "Failed to save trial interest" };
+        }
+      }
+
+      // Clinical trials search
+      if (invocation.name === "get_trials") {
+        try {
+          if (isDev) {
+            console.debug("[ChatKitPanel] get_trials", invocation.params);
+          }
+          
+          const response = await fetch("/api/tools", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              toolName: "get_trials",
+              params: invocation.params,
+            }),
+          });
+
+          const data = await response.json();
+          return data;
+        } catch (error) {
+          console.error("[ChatKitPanel] get_trials error", error);
+          return { success: false, error: "Failed to search clinical trials" };
         }
       }
 
