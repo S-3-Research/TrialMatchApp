@@ -1,10 +1,23 @@
 {
   "latestUpdates": [
     {
+      "version": "v0.3.0",
+      "date": "January 23, 2026",
+      "title": "User Personalization & Profile Management",
+      "isLatest": true,
+      "items": [
+        "Added Personalization menu item in Clerk UserButton dropdown",
+        "Created comprehensive profile management page at /personalization",
+        "Implemented API routes for viewing, updating, and deleting user profiles",
+        "Profile data stored in Supabase including health info, caregiver status, and location preferences",
+        "Full support for ADRD diagnosis tracking and mobility preferences"
+      ]
+    },
+    {
       "version": "v0.2.0",
       "date": "December 17, 2025",
       "title": "Accessibility & Theme Improvements",
-      "isLatest": true,
+      "isLatest": false,
       "items": [
         "Added font size selector for elderly-friendly experience",
         "Customized ChatKit theme to match TrialChat medical aesthetic",
@@ -26,18 +39,6 @@
     }
   ],
   "plannedFeatures": [
-    {
-      "title": "Session Management on Sign-out",
-      "description": "Clear ChatKit session cookie when user signs out"
-    },
-    {
-      "title": "User Profile & Preferences",
-      "description": "Save user health information and trial preferences"
-    },
-    {
-      "title": "Side panel for Saved Facts and other Integrations sucha as cognitive tests",
-      "description": "Implement side panel to display saved facts and integrate cognitive tests"
-    },
     {
       "title": "Enhanced Accessibility Features",
       "description": "Add more accessibility options for elderly users such as voice commands"
