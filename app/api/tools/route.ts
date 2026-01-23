@@ -61,6 +61,9 @@ export async function POST(request: NextRequest) {
       
       case "save_trial_interest":
         return handleSaveTrialInterest(params);
+      
+      case "get_trials":
+        return handleGetTrials(params);
 
       // Add more tool handlers here
       default:
@@ -360,6 +363,147 @@ async function handleSaveTrialInterest(params: Record<string, unknown>) {
     console.error("Error saving trial interest:", error);
     return NextResponse.json(
       { success: false, error: "Failed to save trial interest" },
+      { status: 500 }
+    );
+  }
+}
+
+// =====================================================
+// Clinical Trials Search Tool Handler
+// =====================================================
+
+/**
+ * Search for clinical trials based on patient criteria
+ * Params: { age?, sex?, city?, state?, conditions?, pref_distance?, top_n?, ... }
+ */
+async function handleGetTrials(params: Record<string, unknown>) {
+  console.log("🔬 [API/Tools] Searching clinical trials with params:", params);
+  
+  try {
+    const apiUrl = "https://ltqkud1tu1.execute-api.us-west-2.amazonaws.com/Prod/get_trials";
+    
+    // Build request body from params
+    const requestBody: Record<string, unknown> = {};
+    
+    // Patient demographics
+    if (params.age !== undefined) requestBody.age = Number(params.age);
+    if (params.min_age !== undefined) requestBody.min_age = Number(params.min_age);
+    if (params.max_age !== undefined) requestBody.max_age = Number(params.max_age);
+    if (params.sex) requestBody.sex = String(params.sex);
+    
+    // Location
+    if (params.street) requestBody.street = String(params.street);
+    if (params.city) requestBody.city = String(params.city);
+    if (params.county) requestBody.county = String(params.county);
+    if (params.state) requestBody.state = String(params.state);
+    if (params.country) requestBody.country = String(params.country);
+    if (params.zipcode) requestBody.zipcode = String(params.zipcode);
+    if (params.lat !== undefined) requestBody.lat = Number(params.lat);
+    if (params.lon !== undefined) requestBody.lon = Number(params.lon);
+    
+    // Medical conditions
+    if (params.conditions && Array.isArray(params.conditions)) {
+      requestBody.conditions = params.conditions.map(String);
+    }
+    
+    // Preferences
+    if (params.pref_distance !== undefined) requestBody.pref_distance = Number(params.pref_distance);
+    if (params.drive_duration !== undefined) requestBody.drive_duration = Number(params.drive_duration);
+    if (params.top_n !== undefined) requestBody.top_n = Number(params.top_n);
+    
+    // Dates
+    if (params.start_year !== undefined) requestBody.start_year = Number(params.start_year);
+    if (params.start_month !== undefined) requestBody.start_month = Number(params.start_month);
+    if (params.start_day !== undefined) requestBody.start_day = Number(params.start_day);
+    if (params.end_year !== undefined) requestBody.end_year = Number(params.end_year);
+    if (params.end_month !== undefined) requestBody.end_month = Number(params.end_month);
+    if (params.end_day !== undefined) requestBody.end_day = Number(params.end_day);
+    
+    // Trial filters
+    if (params.intervention_types && Array.isArray(params.intervention_types)) {
+      requestBody.intervention_types = params.intervention_types.map(String);
+    }
+    if (params.phases && Array.isArray(params.phases)) {
+      requestBody.phases = params.phases.map(String);
+    }
+
+    console.log("🔬 [API/Tools] Calling external API with body:", JSON.stringify(requestBody, null, 2));
+
+    const apiKey = process.env.CLINICAL_TRIALS_API_KEY;
+    if (!apiKey) {
+      console.error("🔬 [API/Tools] CLINICAL_TRIALS_API_KEY not set");
+      return NextResponse.json(
+        { success: false, error: "Clinical trials API key not configured" },
+        { status: 500 }
+      );
+    }
+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error("🔬 [API/Tools] External API error:", errorData);
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: `Clinical trials API error: ${response.status}`,
+          details: errorData
+        },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    console.log("🔬 [API/Tools] Found trials:", data.matched_trial?.length || 0);
+    
+    // Simplify the response to avoid ChatKit timeout/CORS issues
+    // Only return essential trial information
+    const simplifiedTrials = data.matched_trial?.map((trial: any) => ({
+      id: trial.clinical_trial?.id,
+      title: trial.clinical_trial?.title,
+      recruitment_status: trial.clinical_trial?.recruitment_status,
+      summary: trial.clinical_trial?.summary_100 || trial.clinical_trial?.summary_50,
+      locations: trial.clinical_trial?.locations?.slice(0, 3).map((loc: any) => ({
+        city: loc.city,
+        state: loc.state,
+        country: loc.country,
+      })),
+      eligibility: {
+        sex: trial.clinical_trial?.sex,
+        min_age: trial.clinical_trial?.min_age,
+        max_age: trial.clinical_trial?.max_age,
+      },
+      phases: trial.clinical_trial?.phases,
+      intervention_types: trial.clinical_trial?.intervention_types,
+      conditions: trial.clinical_trial?.conditions?.slice(0, 5),
+      match_reports: trial.reports?.map((report: any) => ({
+        filter_type: report.filter_type,
+        result: report.result,
+        result_text: report.result_text,
+        matched_location_count: report.matched_locations?.length || 0,
+      })),
+      rank: trial.rank,
+    })) || [];
+
+    console.log("🔬 [API/Tools] Returning simplified data with", simplifiedTrials.length, "trials");
+
+    return NextResponse.json({
+      success: true,
+      count: simplifiedTrials.length,
+      trials: simplifiedTrials,
+      summary: data.summary_report || `Found ${simplifiedTrials.length} matching trials`,
+    });
+  } catch (error) {
+    console.error("🔬 [API/Tools] Error fetching clinical trials:", error);
+    return NextResponse.json(
+      { success: false, error: "Failed to fetch clinical trials" },
       { status: 500 }
     );
   }

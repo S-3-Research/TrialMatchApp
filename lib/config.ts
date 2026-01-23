@@ -13,7 +13,7 @@ export const STARTER_PROMPTS: StartScreenPrompt[] = [
   },
   {
     label: "Find trials for me",
-    prompt: "How can I find clinical trials that might be right for me?",
+    prompt: "Find clinical trials that might be right for me?",
     icon: "search",
   },
   {

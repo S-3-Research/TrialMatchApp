@@ -397,7 +397,7 @@ export function ChatKitPanel({
 
           const data = await response.json();
           
-          // 如果成功，添加widget引用
+          // Return widget data - Agent Builder will handle the conversational text
           if (data.success) {
             return {
               success: true,
@@ -513,6 +513,30 @@ export function ChatKitPanel({
         } catch (error) {
           console.error("[ChatKitPanel] save_trial_interest error", error);
           return { success: false, error: "Failed to save trial interest" };
+        }
+      }
+
+      // Clinical trials search
+      if (invocation.name === "get_trials") {
+        try {
+          if (isDev) {
+            console.debug("[ChatKitPanel] get_trials", invocation.params);
+          }
+          
+          const response = await fetch("/api/tools", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              toolName: "get_trials",
+              params: invocation.params,
+            }),
+          });
+
+          const data = await response.json();
+          return data;
+        } catch (error) {
+          console.error("[ChatKitPanel] get_trials error", error);
+          return { success: false, error: "Failed to search clinical trials" };
         }
       }
 
