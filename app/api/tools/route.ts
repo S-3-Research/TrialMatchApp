@@ -465,12 +465,34 @@ async function handleGetTrials(params: Record<string, unknown>) {
     
     // Simplify the response to avoid ChatKit timeout/CORS issues
     // Only return essential trial information
-    const simplifiedTrials = data.matched_trial?.map((trial: any) => ({
+    const simplifiedTrials = data.matched_trial?.map((trial: {
+      clinical_trial?: {
+        id?: string;
+        title?: string;
+        recruitment_status?: string;
+        summary_100?: string;
+        summary_50?: string;
+        locations?: Array<{ city?: string; state?: string; country?: string }>;
+        sex?: string;
+        min_age?: string;
+        max_age?: string;
+        phases?: string[];
+        intervention_types?: string[];
+        conditions?: string[];
+      };
+      reports?: Array<{
+        filter_type?: string;
+        result?: string;
+        result_text?: string;
+        matched_locations?: unknown[];
+      }>;
+      rank?: number;
+    }) => ({
       id: trial.clinical_trial?.id,
       title: trial.clinical_trial?.title,
       recruitment_status: trial.clinical_trial?.recruitment_status,
       summary: trial.clinical_trial?.summary_100 || trial.clinical_trial?.summary_50,
-      locations: trial.clinical_trial?.locations?.slice(0, 3).map((loc: any) => ({
+      locations: trial.clinical_trial?.locations?.slice(0, 3).map((loc: { city?: string; state?: string; country?: string }) => ({
         city: loc.city,
         state: loc.state,
         country: loc.country,
@@ -483,7 +505,12 @@ async function handleGetTrials(params: Record<string, unknown>) {
       phases: trial.clinical_trial?.phases,
       intervention_types: trial.clinical_trial?.intervention_types,
       conditions: trial.clinical_trial?.conditions?.slice(0, 5),
-      match_reports: trial.reports?.map((report: any) => ({
+      match_reports: trial.reports?.map((report: {
+        filter_type?: string;
+        result?: string;
+        result_text?: string;
+        matched_locations?: unknown[];
+      }) => ({
         filter_type: report.filter_type,
         result: report.result,
         result_text: report.result_text,
