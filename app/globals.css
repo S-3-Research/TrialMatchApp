@@ -32,3 +32,18 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
 }
+
+/* ChatKitPanel fixed width breakpoints */
+@media (min-width: 576px) and (max-width: 767px) {
+  .chatkit-panel-container {
+    min-width: 575px;
+    max-width: 575px;
+    margin: 0 auto;
+  }
+}
+
+@media (min-width: 768px) {
+  .chatkit-panel-container {
+    min-width: 768px;
+  }
+}

@@ -11,8 +11,10 @@ import {
   getThemeConfig,
 } from "@/lib/config";
 import { ErrorOverlay } from "./ErrorOverlay";
+import { VoiceInputButton } from "./VoiceInputButton";
 import type { ColorScheme } from "@/hooks/useColorScheme";
 import { useFontSize } from "@/contexts/FontSizeContext";
+import { correctMedicalTerms } from "@/lib/medicalTermsCorrection";
 
 export type FactAction = {
   type: "save";
@@ -577,9 +579,61 @@ export function ChatKitPanel({
       setIsInitializingSession(false);
     }
   }, [chatkit.control, isInitializingSession]);
+
+  // Handle voice input transcript
+  const handleVoiceTranscript = useCallback((transcript: string) => {
+    const correctedText = correctMedicalTerms(transcript);
+    
+    if (isDev) {
+      console.log("[VoiceInput] Original:", transcript);
+      console.log("[VoiceInput] Corrected:", correctedText);
+      console.log("[VoiceInput] ChatKit control available:", Boolean(chatkit.control));
+      console.log("[VoiceInput] ChatKit ref available:", Boolean(chatkit.ref?.current));
+      console.log("[VoiceInput] Is initializing:", isInitializingSession);
+    }
+
+    if (!correctedText.trim()) {
+      return;
+    }
+
+    // Wait for ChatKit to be fully ready
+    if (!chatkit.control || isInitializingSession) {
+      console.warn('[VoiceInput] ⚠️ ChatKit not ready yet, waiting...');
+      // Retry after a short delay
+      setTimeout(() => {
+        if (chatkit.control && !isInitializingSession) {
+          handleVoiceTranscript(transcript);
+        } else {
+          console.error('[VoiceInput] ❌ ChatKit still not ready after delay');
+        }
+      }, 500);
+      return;
+    }
+
+    // Use ChatKit's official setComposerValue API
+    try {
+      // Try using the ref.current instance directly
+      if (chatkit.ref?.current) {
+        chatkit.ref.current.setComposerValue({ text: correctedText });
+        chatkit.ref.current.focusComposer();
+        if (isDev) {
+          console.log('[VoiceInput] ✅ Text set via ref.current.setComposerValue');
+        }
+      } else {
+        // Fallback to direct method call
+        chatkit.setComposerValue({ text: correctedText });
+        chatkit.focusComposer?.();
+        if (isDev) {
+          console.log('[VoiceInput] ✅ Text set via chatkit.setComposerValue');
+        }
+      }
+    } catch (err) {
+      console.error('[VoiceInput] ❌ Failed to set composer value:', err);
+    }
+  }, [chatkit, isInitializingSession]);
   
   return (
-    <div className="relative pb-8 flex h-[90vh] w-full rounded-2xl flex-col overflow-hidden bg-white shadow-sm transition-colors dark:bg-slate-900 z-0">
+    <div className="chatkit-panel-container relative pb-8 flex h-[90vh] w-full rounded-2xl flex-col overflow-hidden bg-white shadow-sm transition-colors dark:bg-slate-900 z-0">
       <ChatKit
         key={widgetInstanceKey}
         control={chatkit.control}
@@ -589,6 +643,17 @@ export function ChatKitPanel({
             : "block h-full w-full"
         }
       />
+      
+      {/* Voice Input Button - positioned at same level as ChatKit */}
+      {!blockingError && !isInitializingSession && (
+        <div 
+          className="absolute bottom-11 md:bottom-13 left-1/2 -translate-x-1/2 w-[calc(100%-24px)] md:w-[calc(100%-40px)] max-w-[771px] flex items-center justify-end"
+          style={{ height: '56px', border: '0px solid red' }}
+        >
+          <VoiceInputButton onTranscript={handleVoiceTranscript} className="mr-14" />
+        </div>
+      )}
+      
       <ErrorOverlay
         error={blockingError}
         fallbackMessage={
