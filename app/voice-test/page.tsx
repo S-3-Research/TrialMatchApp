@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { VoiceInputButton } from "@/components/VoiceInputButton";
+import { VoiceInputButtonWhisper } from "@/components/VoiceInputButtonWhisper";
 
 export default function VoiceTestPage() {
-  const [transcript, setTranscript] = useState("");
+  const [webSpeechTranscript, setWebSpeechTranscript] = useState("");
+  const [whisperTranscript, setWhisperTranscript] = useState("");
   const [isSecureContext, setIsSecureContext] = useState(false);
   const [protocol, setProtocol] = useState("");
   const [hasSpeechAPI, setHasSpeechAPI] = useState(false);
@@ -24,16 +26,21 @@ export default function VoiceTestPage() {
     console.log('[VoiceTest] webkitSpeechRecognition available:', 'webkitSpeechRecognition' in window);
   }, []);
 
-  const handleTranscript = (text: string) => {
-    console.log("[VoiceTestPage] Received transcript:", text);
-    setTranscript((prev) => prev + " " + text);
+  const handleWebSpeechTranscript = (text: string) => {
+    console.log("[VoiceTestPage] Web Speech API transcript:", text);
+    setWebSpeechTranscript((prev) => prev + " " + text);
+  };
+
+  const handleWhisperTranscript = (text: string) => {
+    console.log("[VoiceTestPage] Whisper API transcript:", text);
+    setWhisperTranscript((prev) => prev + " " + text);
   };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8">
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white">
-          Voice Input Test
+          Voice Input Comparison: Web Speech API vs Whisper
         </h1>
 
         {/* Diagnostic Info */}
@@ -62,33 +69,116 @@ export default function VoiceTestPage() {
           )}
         </div>
 
+        {/* Side by side comparison */}
+        <div className="grid md:grid-cols-2 gap-6 mb-6">
+          {/* Web Speech API */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-semibold mb-4 text-blue-600 dark:text-blue-400 flex items-center gap-2">
+              <span className="text-2xl">🌐</span>
+              Web Speech API
+            </h2>
+            <textarea
+              value={webSpeechTranscript}
+              onChange={(e) => setWebSpeechTranscript(e.target.value)}
+              className="w-full h-32 p-4 mb-4 border border-gray-300 dark:border-gray-600 rounded-lg resize-none bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm"
+              placeholder="Real-time transcription..."
+            />
+            <div className="flex justify-center items-center h-24 relative mb-3">
+              <VoiceInputButton onTranscript={handleWebSpeechTranscript} />
+            </div>
+            <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+              <li>✅ Real-time results</li>
+              <li>✅ No API costs</li>
+              <li>✅ Instant feedback</li>
+              <li>⚠️ Browser dependent</li>
+              <li>⚠️ Requires HTTPS</li>
+            </ul>
+            <button
+              onClick={() => setWebSpeechTranscript("")}
+              className="mt-4 w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm"
+            >
+              Clear
+            </button>
+          </div>
+
+          {/* Whisper API */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-semibold mb-4 text-purple-600 dark:text-purple-400 flex items-center gap-2">
+              <span className="text-2xl">🤖</span>
+              OpenAI Whisper
+            </h2>
+            <textarea
+              value={whisperTranscript}
+              onChange={(e) => setWhisperTranscript(e.target.value)}
+              className="w-full h-32 p-4 mb-4 border border-gray-300 dark:border-gray-600 rounded-lg resize-none bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm"
+              placeholder="Transcription after recording..."
+            />
+            <div className="flex justify-center items-center h-24 relative mb-3">
+              <VoiceInputButtonWhisper onTranscript={handleWhisperTranscript} />
+            </div>
+            <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+              <li>✅ High accuracy</li>
+              <li>✅ Works everywhere</li>
+              <li>✅ No browser limits</li>
+              <li>⚠️ API costs apply</li>
+              <li>⚠️ Processing delay</li>
+            </ul>
+            <button
+              onClick={() => setWhisperTranscript("")}
+              className="mt-4 w-full px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 text-sm"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Transcript
-          </label>
-          <textarea
-            value={transcript}
-            onChange={(e) => setTranscript(e.target.value)}
-            className="w-full h-40 p-4 border border-gray-300 dark:border-gray-600 rounded-lg resize-none bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
-            placeholder="Voice input will appear here..."
-          />
-          <button
-            onClick={() => setTranscript("")}
-            className="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-          >
-            Clear
-          </button>
+          <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
+            📊 Comparison
+          </h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b dark:border-gray-700">
+                  <th className="text-left py-2 px-3 text-gray-700 dark:text-gray-300">Feature</th>
+                  <th className="text-center py-2 px-3 text-blue-600 dark:text-blue-400">Web Speech</th>
+                  <th className="text-center py-2 px-3 text-purple-600 dark:text-purple-400">Whisper</th>
+                </tr>
+              </thead>
+              <tbody className="text-gray-600 dark:text-gray-400">
+                <tr className="border-b dark:border-gray-700">
+                  <td className="py-2 px-3">Speed</td>
+                  <td className="text-center">⚡ Real-time</td>
+                  <td className="text-center">🕐 2-5 seconds</td>
+                </tr>
+                <tr className="border-b dark:border-gray-700">
+                  <td className="py-2 px-3">Accuracy</td>
+                  <td className="text-center">Good</td>
+                  <td className="text-center">Excellent</td>
+                </tr>
+                <tr className="border-b dark:border-gray-700">
+                  <td className="py-2 px-3">Cost</td>
+                  <td className="text-center">Free</td>
+                  <td className="text-center">$0.006/min</td>
+                </tr>
+                <tr className="border-b dark:border-gray-700">
+                  <td className="py-2 px-3">Browser Support</td>
+                  <td className="text-center">Chrome, Safari</td>
+                  <td className="text-center">All (via API)</td>
+                </tr>
+                <tr>
+                  <td className="py-2 px-3">Medical Terms</td>
+                  <td className="text-center">Needs correction</td>
+                  <td className="text-center">Better recognition</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
-          <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
-            Voice Button
-          </h2>
-          <div className="flex justify-center items-center h-32 relative">
-            <VoiceInputButton onTranscript={handleTranscript} />
-          </div>
-          <p className="mt-4 text-sm text-gray-600 dark:text-gray-400 text-center">
-            Click the microphone button and speak. Check browser console for debug logs.
+          <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+            💡 Try both and compare the results! Check browser console for debug logs.
           </p>
         </div>
 

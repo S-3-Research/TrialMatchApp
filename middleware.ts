@@ -11,6 +11,8 @@ const isProtectedRoute = createRouteMatcher([
 // API 路由白名单（不需要 Clerk 认证的公开 API）
 const isPublicApiRoute = createRouteMatcher([
   '/api/create-session',  // ChatKit 创建 session（在登录前调用）
+  '/api/whisper',         // Whisper 语音转文字 API
+  '/api/test',            // 测试 API
   // /api/tools 需要认证保护，因为用户已登录后才能调用
 ]);
 
