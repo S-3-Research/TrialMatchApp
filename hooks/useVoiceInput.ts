@@ -66,6 +66,8 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}) {
   }, []);
 
   const startListening = useCallback(() => {
+    console.log('[useVoiceInput] startListening called, isSupported:', isSupported);
+    
     if (!isSupported) {
       const errorMsg = 'Speech recognition is not supported in this browser. Please use Chrome, Safari, or Edge.';
       setError(errorMsg);
@@ -76,6 +78,8 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}) {
     try {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
+      
+      console.log('[useVoiceInput] SpeechRecognition created');
 
       recognition.lang = lang;
       recognition.continuous = continuous;
@@ -83,6 +87,7 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}) {
       recognition.maxAlternatives = 1;
 
       recognition.onstart = () => {
+        console.log('[useVoiceInput] Recognition started');
         setIsListening(true);
         setError(null);
         setTranscript('');
@@ -128,7 +133,7 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}) {
             errorMsg = 'Microphone not available. Please check your device settings.';
             break;
           case 'not-allowed':
-            errorMsg = 'Microphone access denied. Please allow microphone access in your browser settings.';
+            errorMsg = 'Microphone access denied. Click the lock icon in your address bar (or Settings > Safari > This Website on mobile) to allow microphone access, then refresh the page.';
             break;
           case 'network':
             errorMsg = 'Network error occurred. Please check your connection.';
@@ -144,13 +149,16 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}) {
       };
 
       recognition.onend = () => {
+        console.log('[useVoiceInput] Recognition ended');
         setIsListening(false);
         setInterimTranscript('');
       };
 
       recognitionRef.current = recognition;
+      console.log('[useVoiceInput] Calling recognition.start()');
       recognition.start();
     } catch (err) {
+      console.error('[useVoiceInput] Exception during start:', err);
       const errorMsg = 'Failed to start speech recognition. Please try again.';
       setError(errorMsg);
       onError?.(errorMsg);
