@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Header from "@/components/Header";
 import { FontSizeProvider } from "@/contexts/FontSizeContext";
+import { VoiceInputModeProvider } from "@/contexts/VoiceInputModeContext";
 
 export const metadata: Metadata = {
   title: "AgentKit demo",
@@ -28,8 +29,10 @@ export default function RootLayout({
         </head>
         <body className="antialiased min-h-screen flex flex-col">
           <FontSizeProvider>
-            <Header />
-            {children}
+            <VoiceInputModeProvider>
+              <Header />
+              {children}
+            </VoiceInputModeProvider>
           </FontSizeProvider>
         </body>
       </html>
