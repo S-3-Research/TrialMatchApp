@@ -12,8 +12,10 @@ import {
 } from "@/lib/config";
 import { ErrorOverlay } from "./ErrorOverlay";
 import { VoiceInputButton } from "./VoiceInputButton";
+import { VoiceInputButtonWhisper } from "./VoiceInputButtonWhisper";
 import type { ColorScheme } from "@/hooks/useColorScheme";
 import { useFontSize } from "@/contexts/FontSizeContext";
+import { useVoiceInputMode } from "@/contexts/VoiceInputModeContext";
 import { correctMedicalTerms } from "@/lib/medicalTermsCorrection";
 
 export type FactAction = {
@@ -46,6 +48,23 @@ const createInitialErrors = (): ErrorState => ({
   integration: null,
   retryable: false,
 });
+
+// Voice Input Button Switcher - switches between Web Speech and Whisper based on context mode
+function VoiceInputButtonSwitcher({ 
+  onTranscript, 
+  className 
+}: { 
+  onTranscript: (text: string) => void; 
+  className?: string;
+}) {
+  const { mode } = useVoiceInputMode();
+  
+  if (mode === "whisper") {
+    return <VoiceInputButtonWhisper onTranscript={onTranscript} className={className} />;
+  }
+  
+  return <VoiceInputButton onTranscript={onTranscript} className={className} />;
+}
 
 export function ChatKitPanel({
   theme,
@@ -291,7 +310,8 @@ export function ChatKitPanel({
       },
     },
     threadItemActions: {
-      feedback: false,
+      feedback: true,  // 启用反馈按钮（👍👎）
+      retry: true,     // 启用重试按钮（🔄）
     },
     widgets: {
       onAction: async (action: { type: string; [key: string]: unknown }) => {
@@ -647,10 +667,10 @@ export function ChatKitPanel({
       {/* Voice Input Button - positioned at same level as ChatKit */}
       {!blockingError && !isInitializingSession && (
         <div 
-          className="absolute bottom-11 md:bottom-13 left-1/2 -translate-x-1/2 w-[calc(100%-24px)] md:w-[calc(100%-40px)] max-w-[771px] flex items-center justify-end"
-          style={{ height: '56px', border: '0px solid red' }}
+          className="absolute bottom-11 md:bottom-13 left-1/2 -translate-x-1/2 w-[calc(100%-24px)] md:w-[calc(100%-40px)] max-w-[771px] flex items-center justify-end pointer-events-none"
+          style={{ height: '56px' }}
         >
-          <VoiceInputButton onTranscript={handleVoiceTranscript} className="mr-14" />
+          <VoiceInputButtonSwitcher onTranscript={handleVoiceTranscript} className="mr-14 pointer-events-auto" />
         </div>
       )}
       

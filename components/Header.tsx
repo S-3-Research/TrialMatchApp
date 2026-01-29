@@ -9,6 +9,7 @@ import {
   UserButton,
 } from "@clerk/nextjs";
 import FontSizeSelector from "./FontSizeSelector";
+import { VoiceInputModeSelector } from "./VoiceInputModeSelector";
 
 export default function Header() {
   return (
@@ -43,6 +44,9 @@ export default function Header() {
 
         {/* Right: Auth Buttons */}
         <div className="flex items-center gap-3">
+          <SignedIn>
+            <VoiceInputModeSelector />
+          </SignedIn>
           <FontSizeSelector />
 
           <SignedOut>

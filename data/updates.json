@@ -1,10 +1,26 @@
 {
   "latestUpdates": [
     {
+      "version": "v0.5.0",
+      "date": "January 28, 2026",
+      "title": "Voice Input Enhancements & User Feedback",
+      "isLatest": true,
+      "items": [
+        "Added dual voice input modes: Web Speech API and OpenAI Whisper",
+        "Voice input mode selector in header (switch between free real-time and accurate paid options)",
+        "OpenAI Whisper integration with auto language detection (Chinese/English)",
+        "Voice input comparison test page at /voice-test",
+        "Recording timer and processing indicators for Whisper mode",
+        "Enabled feedback buttons (thumbs up/down) for AI responses",
+        "Enabled retry button for regenerating AI responses",
+        "Fixed voice button container blocking input field interaction"
+      ]
+    },
+    {
       "version": "v0.4.0",
       "date": "January 26, 2026",
       "title": "Voice Input for Enhanced Accessibility",
-      "isLatest": true,
+      "isLatest": false,
       "items": [
         "Added voice input button with Web Speech API integration",
         "Real-time speech-to-text with interim results display",

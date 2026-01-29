@@ -81,6 +81,7 @@ export function VoiceInputButton({ onTranscript, className = "" }: VoiceInputBut
   }, [error]);
 
   const handleClick = () => {
+    console.log('[VoiceInputButton] Button clicked, isListening:', isListening, 'isSupported:', isSupported);
     if (isListening) {
       stopListening();
     } else {
