@@ -666,10 +666,10 @@ export function ChatKitPanel({
       {/* Voice Input Button - positioned at same level as ChatKit */}
       {!blockingError && !isInitializingSession && (
         <div 
-          className="absolute bottom-11 md:bottom-13 left-1/2 -translate-x-1/2 w-[calc(100%-24px)] md:w-[calc(100%-40px)] max-w-[771px] flex items-center justify-end"
-          style={{ height: '56px', border: '0px solid red' }}
+          className="absolute bottom-11 md:bottom-13 left-1/2 -translate-x-1/2 w-[calc(100%-24px)] md:w-[calc(100%-40px)] max-w-[771px] flex items-center justify-end pointer-events-none"
+          style={{ height: '56px' }}
         >
-          <VoiceInputButtonSwitcher onTranscript={handleVoiceTranscript} className="mr-14" />
+          <VoiceInputButtonSwitcher onTranscript={handleVoiceTranscript} className="mr-14 pointer-events-auto" />
         </div>
       )}
       
