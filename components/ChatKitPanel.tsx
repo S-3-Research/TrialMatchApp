@@ -310,7 +310,8 @@ export function ChatKitPanel({
       },
     },
     threadItemActions: {
-      feedback: false,
+      feedback: true,  // 启用反馈按钮（👍👎）
+      retry: true,     // 启用重试按钮（🔄）
     },
     widgets: {
       onAction: async (action: { type: string; [key: string]: unknown }) => {
