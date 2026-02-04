@@ -1,13 +1,126 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
+import { useUser } from "@clerk/nextjs";
 import { ChatKitPanel, type FactAction } from "@/components/ChatKitPanel";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import ResourcePanel from "@/components/ResourcePanel";
+import { IntakeFormModal } from "@/components/IntakeFormModal";
+import type { IntakeData } from "@/lib/types/intake";
+import { INTAKE_STORAGE_KEY } from "@/lib/types/intake";
 
 export default function App() {
   const { scheme, setScheme } = useColorScheme();
   const [isResourcePanelOpen, setIsResourcePanelOpen] = useState(false);
+  const { isLoaded, isSignedIn } = useUser();
+  const [showIntakeModal, setShowIntakeModal] = useState(false);
+  const [intakeCompleted, setIntakeCompleted] = useState(false);
+  const [isMigratingIntake, setIsMigratingIntake] = useState(false);
+
+  // Migrate localStorage intake data to Supabase when user signs in
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || isMigratingIntake) return;
+
+    const migrateIntakeData = async () => {
+      if (typeof window === "undefined") return;
+
+      const stored = localStorage.getItem(INTAKE_STORAGE_KEY);
+      if (!stored) return;
+
+      try {
+        setIsMigratingIntake(true);
+        const data = JSON.parse(stored) as IntakeData;
+
+        console.log("[App] Migrating intake data to Supabase...");
+
+        const response = await fetch("/api/migrate-intake", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            role: data.role,
+            response_style: data.response_style,
+            intent: data.intent,
+          }),
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          console.log("[App] Intake data migrated successfully");
+          // Clear localStorage after successful migration
+          localStorage.removeItem(INTAKE_STORAGE_KEY);
+        } else {
+          console.error("[App] Failed to migrate intake data:", result.error);
+        }
+      } catch (error) {
+        console.error("[App] Error migrating intake data:", error);
+      } finally {
+        setIsMigratingIntake(false);
+      }
+    };
+
+    migrateIntakeData();
+  }, [isLoaded, isSignedIn, isMigratingIntake]);
+
+  // Check if intake is needed for all users (guest and signed in)
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    const checkIntakeStatus = async () => {
+      if (typeof window === "undefined") return;
+
+      // First check localStorage (for guest users or recent data)
+      const stored = localStorage.getItem(INTAKE_STORAGE_KEY);
+      if (stored) {
+        setIntakeCompleted(true);
+        setShowIntakeModal(false);
+        return;
+      }
+
+      // For signed in users, check Supabase
+      if (isSignedIn) {
+        try {
+          console.log("[App] Checking Supabase for intake data...");
+          const response = await fetch("/api/tools", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              toolName: "get_user_profile",
+              params: {},
+            }),
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            console.log("[App] Supabase check result:", result);
+            
+            // If user has intake data in Supabase, they're done
+            if (result.success && result.data?.intake_completed_at) {
+              console.log("[App] User has completed intake in Supabase");
+              setIntakeCompleted(true);
+              setShowIntakeModal(false);
+              return;
+            } else {
+              console.log("[App] No intake data found in Supabase:", {
+                hasData: !!result.data,
+                hasIntakeCompletedAt: !!result.data?.intake_completed_at,
+              });
+            }
+          } else {
+            console.error("[App] Failed to check Supabase:", response.status);
+          }
+        } catch (error) {
+          console.error("[App] Error checking intake status:", error);
+        }
+      }
+
+      // Show intake modal if no data found (both guest and signed in)
+      setShowIntakeModal(true);
+      setIntakeCompleted(false);
+    };
+
+    checkIntakeStatus();
+  }, [isLoaded, isSignedIn]);
 
   const handleWidgetAction = useCallback(async (action: FactAction) => {
     if (process.env.NODE_ENV !== "production") {
@@ -21,8 +134,78 @@ export default function App() {
     }
   }, []);
 
+  const handleIntakeComplete = useCallback(async (data: IntakeData) => {
+    console.log("[App] Intake completed:", data);
+    
+    // For signed in users, save directly to Supabase
+    if (isSignedIn) {
+      try {
+        console.log("[App] Saving intake data to Supabase...");
+        const response = await fetch("/api/migrate-intake", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            role: data.role,
+            response_style: data.response_style,
+            intent: data.intent,
+          }),
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          console.log("[App] Intake data saved to Supabase successfully");
+        } else {
+          console.error("[App] Failed to save intake data to Supabase:", result.error);
+          // Fallback to localStorage if Supabase fails
+          if (typeof window !== "undefined") {
+            localStorage.setItem(INTAKE_STORAGE_KEY, JSON.stringify(data));
+          }
+        }
+      } catch (error) {
+        console.error("[App] Error saving intake data to Supabase:", error);
+        // Fallback to localStorage if API call fails
+        if (typeof window !== "undefined") {
+          localStorage.setItem(INTAKE_STORAGE_KEY, JSON.stringify(data));
+        }
+      }
+    } else {
+      // For guest users, save to localStorage (already done by IntakeFormModal)
+      console.log("[App] Guest user - data saved to localStorage");
+    }
+    
+    setIntakeCompleted(true);
+    setShowIntakeModal(false);
+  }, [isSignedIn]);
+
+  const handleIntakeSkip = useCallback(() => {
+    console.log("[App] Intake skipped");
+    setIntakeCompleted(true);
+    setShowIntakeModal(false);
+  }, []);
+
+  // Show loading state while checking auth
+  if (!isLoaded) {
+    return (
+      <main className="flex flex-1 flex-col items-center justify-center bg-slate-100 dark:bg-slate-950">
+        <div className="text-gray-500 dark:text-gray-400">Loading...</div>
+      </main>
+    );
+  }
+
+  // For guests, show intake modal first
+  const shouldShowChat = isSignedIn || intakeCompleted;
+
   return (
     <main className="flex flex-1 flex-col items-center justify-end bg-slate-100 dark:bg-slate-950">
+      {/* Intake Modal for Guest Users */}
+      {showIntakeModal && (
+        <IntakeFormModal
+          onComplete={handleIntakeComplete}
+          onSkip={handleIntakeSkip}
+        />
+      )}
+
       {/* Toggle Button - Fixed to top right */}
       <button
         onClick={() => setIsResourcePanelOpen(!isResourcePanelOpen)}
@@ -57,13 +240,21 @@ export default function App() {
         {/* Panels Container */}
         <div className="flex gap-4">
             <div className="flex-1">
-              <ChatKitPanel
-                theme={scheme}
-                onWidgetAction={handleWidgetAction}
-                onResponseEnd={handleResponseEnd}
-                onThemeRequest={setScheme}
-                onOpenResourcePanel={() => setIsResourcePanelOpen(true)}
-              />
+              {shouldShowChat ? (
+                <ChatKitPanel
+                  theme={scheme}
+                  onWidgetAction={handleWidgetAction}
+                  onResponseEnd={handleResponseEnd}
+                  onThemeRequest={setScheme}
+                  onOpenResourcePanel={() => setIsResourcePanelOpen(true)}
+                />
+              ) : (
+                <div className="flex h-[90vh] items-center justify-center rounded-2xl bg-white shadow-sm dark:bg-slate-900">
+                  <div className="text-center text-gray-500 dark:text-gray-400">
+                    Complete the intake form to start chatting
+                  </div>
+                </div>
+              )}
             </div>
 
             {isResourcePanelOpen && (

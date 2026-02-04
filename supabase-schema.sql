@@ -24,6 +24,12 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   is_caregiver BOOLEAN DEFAULT false,
   relationship_to_patient TEXT,
   
+  -- Intake form data (from guest user onboarding)
+  intake_role TEXT,  -- 'user' or 'caregiver'
+  intake_response_style TEXT,  -- 'concise', 'balanced', or 'verbose'
+  intake_intent TEXT,  -- 'trial_matching' or 'learn_about_trials'
+  intake_completed_at TIMESTAMPTZ,
+  
   -- 偏好和限制
   preferred_language TEXT DEFAULT 'en',
   location JSONB,  -- {city, state, country, coordinates}
@@ -162,3 +168,23 @@ CREATE TRIGGER update_trial_interests_updated_at
   BEFORE UPDATE ON user_trial_interests
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
+
+-- =====================================================
+-- 触发器：同步 intake_role 到 is_caregiver
+-- =====================================================
+
+CREATE OR REPLACE FUNCTION sync_intake_role_to_is_caregiver()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- 当 intake_role 更新时，同步到 is_caregiver
+  IF NEW.intake_role IS NOT NULL THEN
+    NEW.is_caregiver = (NEW.intake_role = 'caregiver');
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER sync_intake_role
+  BEFORE INSERT OR UPDATE ON user_profiles
+  FOR EACH ROW
+  EXECUTE FUNCTION sync_intake_role_to_is_caregiver();

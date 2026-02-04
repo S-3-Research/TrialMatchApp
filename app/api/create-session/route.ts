@@ -31,21 +31,19 @@ export async function POST(request: Request): Promise<Response> {
       return new Response("Missing OpenAI API Key", { status: 500 });
 
     // -------------------------------------------------------------
-    // 改动点 1: 真正鉴权 (Clerk)
+    // 改动点 1: 支持 guest 用户
     // -------------------------------------------------------------
-    // const { userId } = auth(); // 一行代码搞定鉴权
-    const { userId, debug } = await auth(); // 解构出 debug
+    const { userId, debug } = await auth();
 
     console.log("------- DEBUG AUTH -------");
     console.log("User ID:", userId);
-    // console.log("Debug Info:", debug()); // 某些版本 Clerk 支持打印 debug 信息
-    console.log("Cookies:", request.headers.get("cookie")); // 看看请求头里到底有没有 Cookie
+    console.log("Cookies:", request.headers.get("cookie"));
     console.log("--------------------------");
 
-    // 如果用户没登录，直接拒绝，保护你的 API 不被白嫖
-    if (!userId) {
-      return new Response("Unauthorized: Please sign in.", { status: 401 });
-    }
+    // Guest users are allowed - generate a temporary ID
+    const effectiveUserId = userId || `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    console.log("Effective User ID:", effectiveUserId);
 
     // -------------------------------------------------------------
     // 改动点 2: parse 请求体
@@ -63,7 +61,7 @@ export async function POST(request: Request): Promise<Response> {
 
     const payload: Record<string, unknown> = {
       workflow: { id: resolvedWorkflowId },
-      user: userId, // 告诉 OpenAI 这个用户的 Clerk ID，方便后台统计
+      user: effectiveUserId, // Use effectiveUserId (guest or authenticated)
       chatkit_configuration: parsedBody?.chatkit_configuration || {},
     };
 

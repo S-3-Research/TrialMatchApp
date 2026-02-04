@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChatKit, useChatKit } from "@openai/chatkit-react";
+import { useUser } from "@clerk/nextjs";
 import {
   STARTER_PROMPTS,
   PLACEHOLDER_INPUT,
@@ -73,11 +74,13 @@ export function ChatKitPanel({
   onThemeRequest,
   onOpenResourcePanel,
 }: ChatKitPanelProps) {
+  const { isSignedIn } = useUser();
   const { fontSize } = useFontSize();
   const processedFacts = useRef(new Set<string>());
   const [errors, setErrors] = useState<ErrorState>(() => createInitialErrors());
   const [isInitializingSession, setIsInitializingSession] = useState(true);
   const isMountedRef = useRef(true);
+  const hasSetIntakeContext = useRef(false);
   const [scriptStatus, setScriptStatus] = useState<
     "pending" | "ready" | "error"
   >(() =>
@@ -172,6 +175,7 @@ export function ChatKitPanel({
 
   const handleResetChat = useCallback(() => {
     processedFacts.current.clear();
+    hasSetIntakeContext.current = false; // Reset intake context flag
     if (isBrowser) {
       setScriptStatus(
         window.customElements?.get("openai-chatkit") ? "ready" : "pending"
@@ -417,6 +421,14 @@ export function ChatKitPanel({
             }),
           });
 
+          // Check if response is HTML (error page) instead of JSON
+          const contentType = response.headers.get("content-type");
+          if (!response.ok || !contentType?.includes("application/json")) {
+            const text = await response.text();
+            console.error("[ChatKitPanel] get_weather non-JSON response:", text.substring(0, 200));
+            return { success: false, error: `Server error (${response.status}): Unable to fetch weather data` };
+          }
+
           const data = await response.json();
           
           // Return widget data - Agent Builder will handle the conversational text
@@ -441,12 +453,20 @@ export function ChatKitPanel({
           return data;
         } catch (error) {
           console.error("[ChatKitPanel] get_weather error", error);
-          return { success: false, error: "Failed to fetch weather data" };
+          return { success: false, error: "Failed to fetch weather data. Please try again." };
         }
       }
 
       // Supabase tools
       if (invocation.name === "get_user_profile") {
+        // Check authentication before making API call
+        if (!isSignedIn) {
+          if (isDev) {
+            console.debug("[ChatKitPanel] get_user_profile blocked - user not signed in");
+          }
+          return { success: false, error: "User profile requires authentication. Please sign in to save your preferences." };
+        }
+        
         try {
           if (isDev) {
             console.debug("[ChatKitPanel] get_user_profile", invocation.params);
@@ -461,15 +481,37 @@ export function ChatKitPanel({
             }),
           });
 
+          // Check if response is HTML (error page) instead of JSON
+          const contentType = response.headers.get("content-type");
+          if (!response.ok || !contentType?.includes("application/json")) {
+            const text = await response.text();
+            console.error("[ChatKitPanel] get_user_profile non-JSON response:", text.substring(0, 200));
+            
+            // Guest users don't have profiles - this is expected
+            if (response.status === 401 || response.status === 403) {
+              return { success: false, error: "User profile requires authentication. Please sign in to save your preferences." };
+            }
+            
+            return { success: false, error: `Server error (${response.status}): Unable to get user profile` };
+          }
+
           const data = await response.json();
           return data;
         } catch (error) {
           console.error("[ChatKitPanel] get_user_profile error", error);
-          return { success: false, error: "Failed to get user profile" };
+          return { success: false, error: "Failed to get user profile. This feature requires authentication." };
         }
       }
 
       if (invocation.name === "save_user_profile") {
+        // Check authentication before making API call
+        if (!isSignedIn) {
+          if (isDev) {
+            console.debug("[ChatKitPanel] save_user_profile blocked - user not signed in");
+          }
+          return { success: false, error: "Saving profile requires authentication. Please sign in to save your preferences." };
+        }
+        
         try {
           if (isDev) {
             console.debug("[ChatKitPanel] save_user_profile", invocation.params);
@@ -484,15 +526,37 @@ export function ChatKitPanel({
             }),
           });
 
+          // Check if response is HTML (error page) instead of JSON
+          const contentType = response.headers.get("content-type");
+          if (!response.ok || !contentType?.includes("application/json")) {
+            const text = await response.text();
+            console.error("[ChatKitPanel] save_user_profile non-JSON response:", text.substring(0, 200));
+            
+            // Guest users can't save profiles - this is expected
+            if (response.status === 401 || response.status === 403) {
+              return { success: false, error: "Saving profile requires authentication. Please sign in to save your preferences." };
+            }
+            
+            return { success: false, error: `Server error (${response.status}): Unable to save user profile` };
+          }
+
           const data = await response.json();
           return data;
         } catch (error) {
           console.error("[ChatKitPanel] save_user_profile error", error);
-          return { success: false, error: "Failed to save user profile" };
+          return { success: false, error: "Failed to save user profile. This feature requires authentication." };
         }
       }
 
       if (invocation.name === "get_trial_interests") {
+        // Check authentication before making API call
+        if (!isSignedIn) {
+          if (isDev) {
+            console.debug("[ChatKitPanel] get_trial_interests blocked - user not signed in");
+          }
+          return { success: false, error: "Accessing saved interests requires authentication. Please sign in to view your saved trials." };
+        }
+        
         try {
           if (isDev) {
             console.debug("[ChatKitPanel] get_trial_interests", invocation.params);
@@ -507,15 +571,37 @@ export function ChatKitPanel({
             }),
           });
 
+          // Check if response is HTML (error page) instead of JSON
+          const contentType = response.headers.get("content-type");
+          if (!response.ok || !contentType?.includes("application/json")) {
+            const text = await response.text();
+            console.error("[ChatKitPanel] get_trial_interests non-JSON response:", text.substring(0, 200));
+            
+            // Guest users can't access saved interests - this is expected
+            if (response.status === 401 || response.status === 403) {
+              return { success: false, error: "Accessing saved interests requires authentication. Please sign in to view your saved trials." };
+            }
+            
+            return { success: false, error: `Server error (${response.status}): Unable to get trial interests` };
+          }
+
           const data = await response.json();
           return data;
         } catch (error) {
           console.error("[ChatKitPanel] get_trial_interests error", error);
-          return { success: false, error: "Failed to get trial interests" };
+          return { success: false, error: "Failed to get trial interests. This feature requires authentication." };
         }
       }
 
       if (invocation.name === "save_trial_interest") {
+        // Check authentication before making API call
+        if (!isSignedIn) {
+          if (isDev) {
+            console.debug("[ChatKitPanel] save_trial_interest blocked - user not signed in");
+          }
+          return { success: false, error: "Saving trial interests requires authentication. Please sign in to save trials for later." };
+        }
+        
         try {
           if (isDev) {
             console.debug("[ChatKitPanel] save_trial_interest", invocation.params);
@@ -530,11 +616,25 @@ export function ChatKitPanel({
             }),
           });
 
+          // Check if response is HTML (error page) instead of JSON
+          const contentType = response.headers.get("content-type");
+          if (!response.ok || !contentType?.includes("application/json")) {
+            const text = await response.text();
+            console.error("[ChatKitPanel] save_trial_interest non-JSON response:", text.substring(0, 200));
+            
+            // Guest users can't save interests - this is expected
+            if (response.status === 401 || response.status === 403) {
+              return { success: false, error: "Saving trial interests requires authentication. Please sign in to save trials for later." };
+            }
+            
+            return { success: false, error: `Server error (${response.status}): Unable to save trial interest` };
+          }
+
           const data = await response.json();
           return data;
         } catch (error) {
           console.error("[ChatKitPanel] save_trial_interest error", error);
-          return { success: false, error: "Failed to save trial interest" };
+          return { success: false, error: "Failed to save trial interest. This feature requires authentication." };
         }
       }
 
@@ -554,11 +654,19 @@ export function ChatKitPanel({
             }),
           });
 
+          // Check if response is HTML (error page) instead of JSON
+          const contentType = response.headers.get("content-type");
+          if (!response.ok || !contentType?.includes("application/json")) {
+            const text = await response.text();
+            console.error("[ChatKitPanel] get_trials non-JSON response:", text.substring(0, 200));
+            return { success: false, error: `Server error (${response.status}): Unable to search clinical trials` };
+          }
+
           const data = await response.json();
           return data;
         } catch (error) {
           console.error("[ChatKitPanel] get_trials error", error);
-          return { success: false, error: "Failed to search clinical trials" };
+          return { success: false, error: "Failed to search clinical trials. Please try again." };
         }
       }
 
@@ -599,6 +707,85 @@ export function ChatKitPanel({
       setIsInitializingSession(false);
     }
   }, [chatkit.control, isInitializingSession]);
+
+  // Send intake context as first message (after tests confirmed no API support for additional_instructions/state/variables)
+  useEffect(() => {
+    if (!chatkit.control || !isBrowser || hasSetIntakeContext.current) {
+      return;
+    }
+
+    try {
+      const intakeData = localStorage.getItem('intake_data');
+      if (!intakeData) {
+        console.log('[ChatKitPanel] No intake data found');
+        return;
+      }
+
+      const data = JSON.parse(intakeData) as {
+        role?: string;
+        response_style?: string;
+        intent?: string;
+      };
+
+      // Build context message
+      const parts: string[] = [];
+      if (data.role) {
+        parts.push(`I am ${data.role === 'caregiver' ? 'a caregiver' : 'a user looking for information'}`);
+      }
+      if (data.intent) {
+        const intentText = data.intent === 'trial_matching' 
+          ? 'to find suitable clinical trials'
+          : 'to learn about clinical trials';
+        parts.push(intentText);
+      }
+      if (data.response_style) {
+        const styleText = data.response_style === 'concise'
+          ? 'I prefer concise, brief answers'
+          : data.response_style === 'verbose'
+          ? 'I prefer detailed, comprehensive explanations'
+          : 'I prefer balanced responses';
+        parts.push(styleText);
+      }
+
+      if (parts.length === 0) {
+        console.log('[ChatKitPanel] No intake context to send');
+        return;
+      }
+
+      const contextMessage = parts.join(', ') + '.';
+      console.log('[ChatKitPanel] Prepared context message:', contextMessage);
+
+      // Mark as sent to prevent duplicates
+      hasSetIntakeContext.current = true;
+
+      // Wait for session to be fully ready, then send using sendUserMessage API
+      setTimeout(() => {
+        console.log('[ChatKitPanel] Sending message via sendUserMessage API...');
+        
+        if (chatkit.ref?.current && typeof (chatkit.ref.current as any).sendUserMessage === 'function') {
+          (chatkit.ref.current as any).sendUserMessage({ text: contextMessage })
+            .then(() => {
+              console.log('[ChatKitPanel] ✅ Message sent successfully');
+            })
+            .catch((error: Error) => {
+              console.error('[ChatKitPanel] ❌ Failed to send message:', error);
+            });
+        } else if (chatkit.sendUserMessage && typeof chatkit.sendUserMessage === 'function') {
+          chatkit.sendUserMessage({ text: contextMessage })
+            .then(() => {
+              console.log('[ChatKitPanel] ✅ Message sent successfully');
+            })
+            .catch((error: Error) => {
+              console.error('[ChatKitPanel] ❌ Failed to send message:', error);
+            });
+        } else {
+          console.error('[ChatKitPanel] ❌ sendUserMessage method not found');
+        }
+      }, 2000);
+    } catch (error) {
+      console.error('[ChatKitPanel] Failed to send intake context:', error);
+    }
+  }, [chatkit.control, chatkit.ref]);
 
   // Handle voice input transcript
   const handleVoiceTranscript = useCallback((transcript: string) => {
