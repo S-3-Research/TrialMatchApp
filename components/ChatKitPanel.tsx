@@ -229,9 +229,24 @@ export function ChatKitPanel({
           }
         }
 
+        // For guest users, maintain stable user ID to preserve chat history
+        let guestUserId = null;
+        if (isBrowser && !isSignedIn) {
+          const GUEST_ID_KEY = 'chatkit_guest_user_id';
+          guestUserId = localStorage.getItem(GUEST_ID_KEY);
+          if (!guestUserId) {
+            guestUserId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            localStorage.setItem(GUEST_ID_KEY, guestUserId);
+            console.log('[ChatKitPanel] Generated new guest ID:', guestUserId);
+          } else {
+            console.log('[ChatKitPanel] Using existing guest ID:', guestUserId);
+          }
+        }
+
         const requestBody = {
           workflow: { id: WORKFLOW_ID },
           intake_data: intakeData, // Pass to backend for processing
+          guest_user_id: guestUserId, // Pass stable guest ID to preserve history
           chatkit_configuration: {
             // enable attachments
             file_upload: {

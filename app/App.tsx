@@ -17,6 +17,7 @@ export default function App() {
   const [intakeCompleted, setIntakeCompleted] = useState(false);
   const [isMigratingIntake, setIsMigratingIntake] = useState(false);
   const [isCheckingIntake, setIsCheckingIntake] = useState(true); // New: track intake check status
+  const [sessionKey, setSessionKey] = useState(0); // Track session resets for preference updates
 
   // Migrate localStorage intake data to Supabase when user signs in
   useEffect(() => {
@@ -62,6 +63,19 @@ export default function App() {
 
     migrateIntakeData();
   }, [isLoaded, isSignedIn, isMigratingIntake]);
+
+  // Listen for preference updates from settings page
+  useEffect(() => {
+    const handlePreferenceUpdate = () => {
+      console.log("[App] Preferences updated, resetting session...");
+      setSessionKey(prev => prev + 1); // Force ChatKitPanel remount
+    };
+
+    window.addEventListener('intake-preferences-updated', handlePreferenceUpdate);
+    return () => {
+      window.removeEventListener('intake-preferences-updated', handlePreferenceUpdate);
+    };
+  }, []);
 
   // Check if intake is needed for all users (guest and signed in)
   useEffect(() => {
@@ -259,6 +273,7 @@ export default function App() {
             <div className="flex-1">
               {shouldShowChat ? (
                 <ChatKitPanel
+                  key={sessionKey}
                   theme={scheme}
                   onWidgetAction={handleWidgetAction}
                   onResponseEnd={handleResponseEnd}

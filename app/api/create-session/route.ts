@@ -40,15 +40,21 @@ export async function POST(request: Request): Promise<Response> {
     console.log("Cookies:", request.headers.get("cookie"));
     console.log("--------------------------");
 
-    // Guest users are allowed - generate a temporary ID
-    const effectiveUserId = userId || `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    console.log("Effective User ID:", effectiveUserId);
-
     // -------------------------------------------------------------
     // 改动点 2: parse 请求体
     // -------------------------------------------------------------
     const parsedBody = await request.json();
+    
+    // Guest users: use stable ID from request body to preserve chat history
+    // If guest_user_id is provided in the request, use it; otherwise generate a new one
+    let effectiveUserId = userId;
+    if (!userId) {
+      effectiveUserId = parsedBody?.guest_user_id || `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      console.log("[create-session] Guest user ID:", effectiveUserId, parsedBody?.guest_user_id ? "(provided)" : "(generated)");
+    }
+    
+    console.log("Effective User ID:", effectiveUserId);
+
     const resolvedWorkflowId =
       parsedBody?.workflow?.id ?? parsedBody?.workflowId ?? WORKFLOW_ID;
 
