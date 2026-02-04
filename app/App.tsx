@@ -16,6 +16,7 @@ export default function App() {
   const [showIntakeModal, setShowIntakeModal] = useState(false);
   const [intakeCompleted, setIntakeCompleted] = useState(false);
   const [isMigratingIntake, setIsMigratingIntake] = useState(false);
+  const [isCheckingIntake, setIsCheckingIntake] = useState(true); // New: track intake check status
 
   // Migrate localStorage intake data to Supabase when user signs in
   useEffect(() => {
@@ -64,7 +65,7 @@ export default function App() {
 
   // Check if intake is needed for all users (guest and signed in)
   useEffect(() => {
-    if (!isLoaded) return;
+    if (!isLoaded || isMigratingIntake) return;
 
     const checkIntakeStatus = async () => {
       if (typeof window === "undefined") return;
@@ -74,6 +75,7 @@ export default function App() {
       if (stored) {
         setIntakeCompleted(true);
         setShowIntakeModal(false);
+        setIsCheckingIntake(false); // Mark check as complete
         return;
       }
 
@@ -94,11 +96,23 @@ export default function App() {
             const result = await response.json();
             console.log("[App] Supabase check result:", result);
             
-            // If user has intake data in Supabase, they're done
+            // If user has intake data in Supabase, sync to localStorage and skip modal
             if (result.success && result.data?.intake_completed_at) {
               console.log("[App] User has completed intake in Supabase");
+              
+              // Sync Supabase data to localStorage for ChatKit session creation
+              const intakeData: IntakeData = {
+                role: result.data.intake_role,
+                response_style: result.data.intake_response_style,
+                intent: result.data.intake_intent,
+                completed_at: result.data.intake_completed_at,
+              };
+              localStorage.setItem(INTAKE_STORAGE_KEY, JSON.stringify(intakeData));
+              console.log("[App] Synced Supabase intake data to localStorage:", intakeData);
+              
               setIntakeCompleted(true);
               setShowIntakeModal(false);
+              setIsCheckingIntake(false); // Mark check as complete
               return;
             } else {
               console.log("[App] No intake data found in Supabase:", {
@@ -117,10 +131,11 @@ export default function App() {
       // Show intake modal if no data found (both guest and signed in)
       setShowIntakeModal(true);
       setIntakeCompleted(false);
+      setIsCheckingIntake(false); // Mark check as complete
     };
 
     checkIntakeStatus();
-  }, [isLoaded, isSignedIn]);
+  }, [isLoaded, isSignedIn, isMigratingIntake]);
 
   const handleWidgetAction = useCallback(async (action: FactAction) => {
     if (process.env.NODE_ENV !== "production") {
@@ -184,11 +199,13 @@ export default function App() {
     setShowIntakeModal(false);
   }, []);
 
-  // Show loading state while checking auth
-  if (!isLoaded) {
+  // Show loading state while checking auth or intake
+  if (!isLoaded || isCheckingIntake) {
     return (
       <main className="flex flex-1 flex-col items-center justify-center bg-slate-100 dark:bg-slate-950">
-        <div className="text-gray-500 dark:text-gray-400">Loading...</div>
+        <div className="text-gray-500 dark:text-gray-400">
+          {!isLoaded ? 'Loading...' : 'Checking your preferences...'}
+        </div>
       </main>
     );
   }

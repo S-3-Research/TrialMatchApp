@@ -80,7 +80,6 @@ export function ChatKitPanel({
   const [errors, setErrors] = useState<ErrorState>(() => createInitialErrors());
   const [isInitializingSession, setIsInitializingSession] = useState(true);
   const isMountedRef = useRef(true);
-  const hasSetIntakeContext = useRef(false);
   const [scriptStatus, setScriptStatus] = useState<
     "pending" | "ready" | "error"
   >(() =>
@@ -175,7 +174,6 @@ export function ChatKitPanel({
 
   const handleResetChat = useCallback(() => {
     processedFacts.current.clear();
-    hasSetIntakeContext.current = false; // Reset intake context flag
     if (isBrowser) {
       setScriptStatus(
         window.customElements?.get("openai-chatkit") ? "ready" : "pending"
@@ -214,20 +212,42 @@ export function ChatKitPanel({
       }
 
       try {
+        // Read intake data from localStorage
+        let intakeData = null;
+        if (isBrowser) {
+          const stored = localStorage.getItem('intake_data');
+          console.log('[ChatKitPanel] Raw localStorage:', stored);
+          if (stored) {
+            try {
+              intakeData = JSON.parse(stored);
+              console.log('[ChatKitPanel] Parsed intake data:', intakeData);
+            } catch (error) {
+              console.error('[ChatKitPanel] Failed to parse intake data:', error);
+            }
+          } else {
+            console.log('[ChatKitPanel] No intake data in localStorage');
+          }
+        }
+
+        const requestBody = {
+          workflow: { id: WORKFLOW_ID },
+          intake_data: intakeData, // Pass to backend for processing
+          chatkit_configuration: {
+            // enable attachments
+            file_upload: {
+              enabled: true,
+            },
+          },
+        };
+        
+        console.log('[ChatKitPanel] Sending to /api/create-session:', JSON.stringify(requestBody, null, 2));
+
         const response = await fetch(CREATE_SESSION_ENDPOINT, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            workflow: { id: WORKFLOW_ID },
-            chatkit_configuration: {
-              // enable attachments
-              file_upload: {
-                enabled: true,
-              },
-            },
-          }),
+          body: JSON.stringify(requestBody),
         });
 
         const raw = await response.text();
@@ -708,84 +728,8 @@ export function ChatKitPanel({
     }
   }, [chatkit.control, isInitializingSession]);
 
-  // Send intake context as first message (after tests confirmed no API support for additional_instructions/state/variables)
-  useEffect(() => {
-    if (!chatkit.control || !isBrowser || hasSetIntakeContext.current) {
-      return;
-    }
-
-    try {
-      const intakeData = localStorage.getItem('intake_data');
-      if (!intakeData) {
-        console.log('[ChatKitPanel] No intake data found');
-        return;
-      }
-
-      const data = JSON.parse(intakeData) as {
-        role?: string;
-        response_style?: string;
-        intent?: string;
-      };
-
-      // Build context message
-      const parts: string[] = [];
-      if (data.role) {
-        parts.push(`I am ${data.role === 'caregiver' ? 'a caregiver' : 'a user looking for information'}`);
-      }
-      if (data.intent) {
-        const intentText = data.intent === 'trial_matching' 
-          ? 'to find suitable clinical trials'
-          : 'to learn about clinical trials';
-        parts.push(intentText);
-      }
-      if (data.response_style) {
-        const styleText = data.response_style === 'concise'
-          ? 'I prefer concise, brief answers'
-          : data.response_style === 'verbose'
-          ? 'I prefer detailed, comprehensive explanations'
-          : 'I prefer balanced responses';
-        parts.push(styleText);
-      }
-
-      if (parts.length === 0) {
-        console.log('[ChatKitPanel] No intake context to send');
-        return;
-      }
-
-      const contextMessage = parts.join(', ') + '.';
-      console.log('[ChatKitPanel] Prepared context message:', contextMessage);
-
-      // Mark as sent to prevent duplicates
-      hasSetIntakeContext.current = true;
-
-      // Wait for session to be fully ready, then send using sendUserMessage API
-      setTimeout(() => {
-        console.log('[ChatKitPanel] Sending message via sendUserMessage API...');
-        
-        if (chatkit.ref?.current && typeof (chatkit.ref.current as any).sendUserMessage === 'function') {
-          (chatkit.ref.current as any).sendUserMessage({ text: contextMessage })
-            .then(() => {
-              console.log('[ChatKitPanel] ✅ Message sent successfully');
-            })
-            .catch((error: Error) => {
-              console.error('[ChatKitPanel] ❌ Failed to send message:', error);
-            });
-        } else if (chatkit.sendUserMessage && typeof chatkit.sendUserMessage === 'function') {
-          chatkit.sendUserMessage({ text: contextMessage })
-            .then(() => {
-              console.log('[ChatKitPanel] ✅ Message sent successfully');
-            })
-            .catch((error: Error) => {
-              console.error('[ChatKitPanel] ❌ Failed to send message:', error);
-            });
-        } else {
-          console.error('[ChatKitPanel] ❌ sendUserMessage method not found');
-        }
-      }, 2000);
-    } catch (error) {
-      console.error('[ChatKitPanel] Failed to send intake context:', error);
-    }
-  }, [chatkit.control, chatkit.ref]);
+  // Note: Intake context is now passed via workflow.state_variables during session creation
+  // See /app/api/create-session/route.ts for implementation
 
   // Handle voice input transcript
   const handleVoiceTranscript = useCallback((transcript: string) => {

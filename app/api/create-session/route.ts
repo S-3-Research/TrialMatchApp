@@ -53,17 +53,39 @@ export async function POST(request: Request): Promise<Response> {
       parsedBody?.workflow?.id ?? parsedBody?.workflowId ?? WORKFLOW_ID;
 
     // -------------------------------------------------------------
-    // 3. 发送给 OpenAI / ChatKit
+    // 改动点 3: 读取 intake data 并传递到 workflow state_variables
+    // -------------------------------------------------------------
+    const intakeData = parsedBody?.intake_data;
+    const stateVariables: Record<string, string | number | boolean> = {};
+    
+    if (intakeData) {
+      console.log("[create-session] Intake data received:", intakeData);
+      
+      // Add intake data to workflow state variables
+      if (intakeData.role) stateVariables.user_role = intakeData.role;
+      if (intakeData.response_style) stateVariables.response_style = intakeData.response_style;
+      if (intakeData.intent) stateVariables.user_intent = intakeData.intent;
+      
+      console.log("[create-session] State variables:", stateVariables);
+    }
+
+    // -------------------------------------------------------------
+    // 4. 发送给 OpenAI / ChatKit
     // -------------------------------------------------------------
     const upstreamUrl = `${
       process.env.CHATKIT_API_BASE || "https://api.openai.com"
     }/v1/chatkit/sessions`;
 
     const payload: Record<string, unknown> = {
-      workflow: { id: resolvedWorkflowId },
+      workflow: { 
+        id: resolvedWorkflowId,
+        ...(Object.keys(stateVariables).length > 0 && { state_variables: stateVariables })
+      },
       user: effectiveUserId, // Use effectiveUserId (guest or authenticated)
       chatkit_configuration: parsedBody?.chatkit_configuration || {},
     };
+
+    console.log("[create-session] Final payload being sent:", JSON.stringify(payload, null, 2));
 
     const upstreamResponse = await fetch(upstreamUrl, {
       method: "POST",

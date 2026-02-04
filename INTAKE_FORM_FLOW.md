@@ -183,8 +183,18 @@ const response = await fetch("/api/tools", {
 
 const result = await response.json();
 if (result.success && result.data?.intake_completed_at) {
+  // Sync Supabase data to localStorage for ChatKit session creation
+  const intakeData = {
+    role: result.data.intake_role,
+    response_style: result.data.intake_response_style,
+    intent: result.data.intake_intent,
+    completed_at: result.data.intake_completed_at,
+  };
+  localStorage.setItem(INTAKE_STORAGE_KEY, JSON.stringify(intakeData));
+  
   setIntakeCompleted(true);
   setShowIntakeModal(false);
+  setIsCheckingIntake(false); // 标记检查完成
 }
 ```
 
@@ -269,6 +279,7 @@ const response = await fetch("/api/migrate-intake", {
 1. **自动迁移**: `/app/App.tsx` - 监听 `isSignedIn` 变化的 useEffect
 2. **迁移 API**: `/app/api/migrate-intake/route.ts`
 3. **数据清理**: 成功后 `localStorage.removeItem(INTAKE_STORAGE_KEY)`
+4. **竞态防护**: `checkIntakeStatus` 守卫条件 + 依赖数组监听 `isMigratingIntake`
 
 ### 关键代码片段
 
@@ -342,56 +353,66 @@ CREATE TRIGGER sync_intake_role
 
 ## ChatKit 上下文发送
 
-### 时机
-- ChatKit 完全加载后（`chatkit.control` 和 `chatkit.ref` 都就绪）
-- 仅发送一次（使用 `hasSetIntakeContext` ref 防止重复）
+### 实现方式
+通过 **workflow.state_variables** 在 session 创建时全局注入用户偏好设置。
 
-### 消息格式
+### 优势
+- ✅ **全局生效**: 所有 thread（对话）都能访问这些变量
+- ✅ **不占历史**: 不会在对话记录中显示
+- ✅ **原生支持**: 使用 ChatKit 官方 API
+- ✅ **持久化**: 整个 session 生命周期内有效
 
-根据 intake 数据构建个性化上下文消息：
+### 技术细节
 
-```javascript
-// 示例：caregiver + concise + trial_matching
-"I am a caregiver, to find suitable clinical trials, I prefer concise, brief answers."
+**Session 创建时传递**（`/app/api/create-session/route.ts`）:
+```typescript
+const payload = {
+  workflow: { 
+    id: workflowId,
+    state_variables: {
+      user_role: 'caregiver',           // or 'user'
+      response_style: 'concise',        // or 'balanced', 'verbose'
+      user_intent: 'trial_matching'     // or 'learn_about_trials'
+    }
+  },
+  user: effectiveUserId,
+};
+```
 
-// 示例：user + verbose + learn_about_trials
-"I am a user looking for information, to learn about clinical trials, I prefer detailed, comprehensive explanations."
+**Workflow 中使用**（OpenAI Platform）:
+```
+System Prompt:
+You are a helpful assistant for clinical trials.
+
+User Context:
+- Role: {{workflow.state.user_role}}
+- Response Style: {{workflow.state.response_style}}
+- Intent: {{workflow.state.user_intent}}
+
+Adapt your responses based on these preferences.
+```
+
+### 数据流
+
+```
+localStorage (intake_data)
+         ↓
+ChatKitPanel 读取
+         ↓
+传递给 /api/create-session
+         ↓
+添加到 workflow.state_variables
+         ↓
+ChatKit Session 创建
+         ↓
+Workflow 全局可用（所有 threads）
 ```
 
 ### 代码位置
 
-`/components/ChatKitPanel.tsx` - useEffect 监听 `chatkit.control` 和 `chatkit.ref`
-
-### 关键代码
-
-```typescript
-// 读取 localStorage
-const intakeData = localStorage.getItem('intake_data');
-const data = JSON.parse(intakeData);
-
-// 构建消息
-const parts = [];
-if (data.role) {
-  parts.push(`I am ${data.role === 'caregiver' ? 'a caregiver' : 'a user looking for information'}`);
-}
-if (data.intent) {
-  parts.push(data.intent === 'trial_matching' 
-    ? 'to find suitable clinical trials'
-    : 'to learn about clinical trials');
-}
-if (data.response_style) {
-  parts.push(data.response_style === 'concise'
-    ? 'I prefer concise, brief answers'
-    : data.response_style === 'verbose'
-    ? 'I prefer detailed, comprehensive explanations'
-    : 'I prefer balanced responses');
-}
-
-const contextMessage = parts.join(', ') + '.';
-
-// 发送消息
-chatkit.ref.current.sendUserMessage({ text: contextMessage });
-```
+1. **前端读取**: `/components/ChatKitPanel.tsx` - getClientSecret() 函数
+2. **后端处理**: `/app/api/create-session/route.ts` - 构建 state_variables
+3. **Workflow 配置**: OpenAI Platform - Workflow System Prompt
 
 ---
 
@@ -399,11 +420,12 @@ chatkit.ref.current.sendUserMessage({ text: contextMessage });
 
 | 状态 | Guest | 已登录 | 中途登录 |
 |------|-------|--------|----------|
-| **数据存储** | localStorage | Supabase | localStorage → Supabase |
-| **检查顺序** | localStorage only | localStorage → Supabase | localStorage → 自动迁移 |
+| **数据存储** | localStorage | Supabase + localStorage (同步) | localStorage → Supabase → localStorage |
+| **检查顺序** | localStorage only | localStorage → Supabase → 同步到 localStorage | localStorage → 迁移 → Supabase → 同步 |
 | **表单触发** | 无数据时显示 | localStorage 和 Supabase 都无数据时显示 | 已有数据，跳过表单 |
 | **保存逻辑** | IntakeFormModal → localStorage | IntakeFormModal → localStorage + API → Supabase | 登录后自动迁移 |
-| **上下文发送** | ChatKit 读取 localStorage | ChatKit 读取 localStorage | ChatKit 读取 localStorage |
+| **上下文发送** | session 创建时 state_variables | session 创建时 state_variables | session 创建时 state_variables |
+| **竞态防护** | 无需 | isCheckingIntake 防止过早渲染 | isMigratingIntake 阻止并发检查 |
 
 ---
 
@@ -447,8 +469,8 @@ chatkit.ref.current.sendUserMessage({ text: contextMessage });
 5. ✅ 后续访问 → 从 Supabase 读取数据
 
 ### 场景 4: 已有数据的用户
-1. ✅ Supabase 已有 intake_completed_at → 直接跳过表单
-2. ✅ ChatKit 读取 localStorage 或从用户历史获取偏好
+1. ✅ Supabase 已有 intake_completed_at → 同步到 localStorage → 跳过表单
+2. ✅ ChatKit 从 localStorage 读取并传递 state_variables
 
 ---
 
@@ -458,11 +480,16 @@ chatkit.ref.current.sendUserMessage({ text: contextMessage });
 - ✅ Trigger 自动同步 `intake_role` → `is_caregiver`
 - ✅ 迁移成功后清除 localStorage，避免数据冗余
 - ✅ 失败回退：Supabase 保存失败时，保留 localStorage 数据
+- ✅ Supabase 数据自动同步到 localStorage（确保 ChatKitPanel 能读取）
+- ✅ 竞态防护：`isMigratingIntake` 阻止并发操作
 
 ### 性能优化
-- ✅ 使用 `hasSetIntakeContext` ref 防止重复发送上下文
-- ✅ `isMigratingIntake` flag 防止并发迁移
+- ✅ `isCheckingIntake` flag 防止 ChatKitPanel 过早渲染
 - ✅ localStorage 优先检查，减少 API 调用
+- ✅ 所有 thread 自动继承 state_variables
+- ✅ 竞态条件修复：迁移完成后再检查（额外延迟 ~200-500ms）移
+- ✅ localStorage 优先检查，减少 API 调用
+- ✅ 所有 thread 自动继承 state_variables
 
 ### 安全性
 - ✅ `/api/migrate-intake` 需要认证（Clerk userId）
@@ -473,18 +500,70 @@ chatkit.ref.current.sendUserMessage({ text: contextMessage });
 
 ## 未来优化建议
 
-1. **渐进式表单**
+1. **Workflow System Prompt 配置**
+   - 在 OpenAI Platform 中配置使用 state_variables
+   - 根据 user_role 和 response_style 动态调整回复风格
+   - 示例: "When user_role is 'caregiver', be more supportive and explain medical terms clearly"
+
+2. **渐进式表单**
    - 允许用户随时更新偏好
    - 在 settings 页面提供编辑入口
+   - 更新后重新创建 session 应用新设置
 
-2. **智能推荐**
+3. **智能推荐**
    - 根据对话历史动态调整 response_style
    - 机器学习优化个性化体验
 
-3. **数据分析**
+4. **数据分析**
    - 统计不同 intent/role 的使用分布
    - 优化问卷设计
 
-4. **离线支持**
+5. **离线支持**
    - Service Worker 缓存 intake 数据
    - 网络恢复后自动同步
+
+## Workflow 配置示例
+
+在 OpenAI Platform 的 Workflow System Prompt 中使用：
+
+```
+You are TrialChat, an AI assistant helping users find and learn about Alzheimer's clinical trials.
+
+User Context (from intake form):
+- Role: {{workflow.state.user_role || "unknown"}}
+- Preferred Response Style: {{workflow.state.response_style || "balanced"}}
+- Primary Intent: {{workflow.state.user_intent || "general"}}
+
+Response Guidelines:
+{% if workflow.state.user_role == "caregiver" %}
+- Remember you're speaking to a caregiver, not the patient
+- Be empathetic and provide support for caregiving challenges
+- Explain medical terms clearly as they'll need to relay info to their loved one
+{% else %}
+- Address the user directly as they're seeking for themselves
+- Empower them with knowledge to make informed decisions
+{% endif %}
+
+{% if workflow.state.response_style == "concise" %}
+- Keep responses brief and to the point
+- Use bullet points and short paragraphs
+- Avoid lengthy explanations unless specifically asked
+{% elif workflow.state.response_style == "verbose" %}
+- Provide comprehensive, detailed explanations
+- Include context, examples, and background information
+- Anticipate follow-up questions and address them proactively
+{% else %}
+- Balance brevity with necessary detail
+- Explain key concepts but avoid overwhelming the user
+{% endif %}
+
+{% if workflow.state.user_intent == "trial_matching" %}
+- Prioritize helping them find suitable clinical trials
+- Focus on eligibility criteria and practical logistics
+- Proactively ask clarifying questions to narrow down matches
+{% else %}
+- Focus on education about clinical trials in general
+- Explain the research process, benefits, and risks
+- Only suggest specific trials when they express interest
+{% endif %}
+```
