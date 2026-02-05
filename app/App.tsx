@@ -3,7 +3,7 @@
 import { useCallback, useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { ChatKitPanel, type FactAction } from "@/components/ChatKitPanel";
-import { useColorScheme } from "@/hooks/useColorScheme";
+import { useColorScheme } from "@/contexts/ColorSchemeContext";
 import ResourcePanel from "@/components/ResourcePanel";
 import { IntakeFormModal } from "@/components/IntakeFormModal";
 import type { IntakeData } from "@/lib/types/intake";
@@ -18,6 +18,7 @@ export default function App() {
   const [isMigratingIntake, setIsMigratingIntake] = useState(false);
   const [isCheckingIntake, setIsCheckingIntake] = useState(true); // New: track intake check status
   const [sessionKey, setSessionKey] = useState(0); // Track session resets for preference updates
+  const [themeVersion, setThemeVersion] = useState(0); // Track theme changes for ChatKit refresh
 
   // Migrate localStorage intake data to Supabase when user signs in
   useEffect(() => {
@@ -76,6 +77,11 @@ export default function App() {
       window.removeEventListener('intake-preferences-updated', handlePreferenceUpdate);
     };
   }, []);
+
+  // Update theme version when scheme changes to force ChatKit refresh
+  useEffect(() => {
+    setThemeVersion(prev => prev + 1);
+  }, [scheme]);
 
   // Check if intake is needed for all users (guest and signed in)
   useEffect(() => {
@@ -216,8 +222,8 @@ export default function App() {
   // Show loading state while checking auth or intake
   if (!isLoaded || isCheckingIntake) {
     return (
-      <main className="flex flex-1 flex-col items-center justify-center bg-slate-100 dark:bg-slate-950">
-        <div className="text-gray-500 dark:text-gray-400">
+      <main className="flex flex-1 flex-col items-center justify-center">
+        <div className="text-slate-500 dark:text-slate-400">
           {!isLoaded ? 'Loading...' : 'Checking your preferences...'}
         </div>
       </main>
@@ -228,7 +234,7 @@ export default function App() {
   const shouldShowChat = isSignedIn || intakeCompleted;
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-end bg-slate-100 dark:bg-slate-950">
+    <main className="flex flex-1 flex-col items-center">
       {/* Intake Modal for Guest Users */}
       {showIntakeModal && (
         <IntakeFormModal
@@ -267,13 +273,13 @@ export default function App() {
         </svg>
       </button>
 
-      <div className="mx-auto w-full max-w-7xl">
+      <div className="mx-auto w-[95%] max-w-6xl flex-1 flex flex-col py-0">
         {/* Panels Container */}
-        <div className="flex gap-4">
-            <div className="flex-1">
+        <div className="flex gap-4 flex-1">
+            <div className="flex-1 flex flex-col">
               {shouldShowChat ? (
                 <ChatKitPanel
-                  key={sessionKey}
+                  key={`${sessionKey}-${themeVersion}`}
                   theme={scheme}
                   onWidgetAction={handleWidgetAction}
                   onResponseEnd={handleResponseEnd}
@@ -281,8 +287,8 @@ export default function App() {
                   onOpenResourcePanel={() => setIsResourcePanelOpen(true)}
                 />
               ) : (
-                <div className="flex h-[90vh] items-center justify-center rounded-2xl bg-white shadow-sm dark:bg-slate-900">
-                  <div className="text-center text-gray-500 dark:text-gray-400">
+                <div className="flex h-full items-center justify-center rounded-2xl bg-white shadow-sm dark:bg-slate-900">
+                  <div className="text-center text-slate-500 dark:text-slate-400">
                     Complete the intake form to start chatting
                   </div>
                 </div>

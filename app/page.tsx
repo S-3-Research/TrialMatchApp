@@ -2,11 +2,11 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-950">
-      <div className="mx-auto max-w-5xl px-6 py-12 text-center">
+    <main className="flex min-h-full flex-col items-center justify-center">
+      <div className="mx-auto max-w-5xl px-6 py-8 text-center">
         {/* Logo/Icon */}
-        <div className="mb-8 flex justify-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg">
+        <div className="mb-6 flex justify-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-700 to-slate-900 shadow-lg">
             <svg
               className="h-12 w-12 text-white"
               fill="none"
@@ -24,7 +24,7 @@ export default function Home() {
         </div>
 
         {/* Heading */}
-        <h1 className="mb-4 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-5xl font-bold text-transparent dark:from-blue-400 dark:to-indigo-400 sm:text-6xl">
+        <h1 className="mb-3 bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-4xl font-bold text-transparent dark:from-slate-300 dark:to-slate-100 sm:text-5xl">
           TrialChat
         </h1>
         <p className="mb-3 text-xl font-medium text-slate-700 dark:text-slate-200">
@@ -37,12 +37,12 @@ export default function Home() {
         </p>
 
         {/* Features Grid */}
-        <div className="mb-12 grid gap-6 sm:grid-cols-3">
-          <div className="rounded-2xl bg-white p-6 shadow-md transition hover:shadow-lg dark:bg-slate-800/50">
-            <div className="mb-3 flex justify-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+        <div className="mb-8 grid gap-4 sm:grid-cols-3">
+          <div className="rounded-2xl bg-white/40 backdrop-blur-2xl border border-slate-200/50 p-5 shadow-xl transition hover:shadow-2xl dark:bg-slate-800/40 dark:border-slate-700/50">
+            <div className="mb-2 flex justify-center">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100/60 backdrop-blur-sm dark:bg-slate-700/50">
                 <svg
-                  className="h-6 w-6 text-blue-600 dark:text-blue-400"
+                  className="h-5 w-5 text-slate-700 dark:text-slate-300"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -56,7 +56,7 @@ export default function Home() {
                 </svg>
               </div>
             </div>
-            <h3 className="mb-2 text-lg font-semibold text-slate-800 dark:text-slate-100">
+            <h3 className="mb-1.5 text-base font-semibold text-slate-800 dark:text-slate-100">
               Personalized Education
             </h3>
             <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -64,11 +64,11 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="rounded-2xl bg-white p-6 shadow-md transition hover:shadow-lg dark:bg-slate-800/50">
-            <div className="mb-3 flex justify-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/30">
+          <div className="rounded-2xl bg-white/40 backdrop-blur-2xl border border-slate-200/50 p-5 shadow-xl transition hover:shadow-2xl dark:bg-slate-800/40 dark:border-slate-700/50">
+            <div className="mb-2 flex justify-center">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200/60 backdrop-blur-sm dark:bg-slate-600/50">
                 <svg
-                  className="h-6 w-6 text-indigo-600 dark:text-indigo-400"
+                  className="h-5 w-5 text-slate-800 dark:text-slate-200"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -82,7 +82,7 @@ export default function Home() {
                 </svg>
               </div>
             </div>
-            <h3 className="mb-2 text-lg font-semibold text-slate-800 dark:text-slate-100">
+            <h3 className="mb-1.5 text-base font-semibold text-slate-800 dark:text-slate-100">
               Smart Trial Matching
             </h3>
             <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -90,11 +90,11 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="rounded-2xl bg-white p-6 shadow-md transition hover:shadow-lg dark:bg-slate-800/50">
-            <div className="mb-3 flex justify-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
+          <div className="rounded-2xl bg-white/40 backdrop-blur-2xl border border-slate-200/50 p-5 shadow-xl transition hover:shadow-2xl dark:bg-slate-800/40 dark:border-slate-700/50">
+            <div className="mb-2 flex justify-center">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-300/60 backdrop-blur-sm dark:bg-slate-500/50">
                 <svg
-                  className="h-6 w-6 text-green-600 dark:text-green-400"
+                  className="h-5 w-5 text-slate-900 dark:text-slate-100"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -108,7 +108,7 @@ export default function Home() {
                 </svg>
               </div>
             </div>
-            <h3 className="mb-2 text-lg font-semibold text-slate-800 dark:text-slate-100">
+            <h3 className="mb-1.5 text-base font-semibold text-slate-800 dark:text-slate-100">
               Simplified Enrollment
             </h3>
             <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -121,7 +121,7 @@ export default function Home() {
         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Link
             href="/chat"
-            className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-4 text-lg font-semibold text-white shadow-lg transition hover:from-blue-700 hover:to-indigo-700 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-500/50"
+            className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-slate-700 to-slate-900 px-7 py-3 text-base font-semibold text-white shadow-lg transition hover:from-slate-800 hover:to-black hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-slate-500/50"
           >
             Start Your Journey
             <svg
@@ -141,24 +141,24 @@ export default function Home() {
         </div>
 
         {/* Trust Badge */}
-        <div className="mt-16 rounded-2xl bg-blue-50/50 p-6 dark:bg-slate-800/30">
+        <div className="mt-10 rounded-2xl bg-slate-100/60 backdrop-blur-2xl border border-slate-200/50 p-4 shadow-lg dark:bg-slate-800/30 dark:border-slate-700/50">
           <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
-            <span className="text-blue-600 dark:text-blue-400">✓</span> HIPAA
+            <span className="text-slate-700 dark:text-slate-300">✓</span> HIPAA
             Compliant &nbsp;•&nbsp;{" "}
-            <span className="text-blue-600 dark:text-blue-400">✓</span> Secure &
+            <span className="text-slate-700 dark:text-slate-300">✓</span> Secure &
             Private &nbsp;•&nbsp;{" "}
-            <span className="text-blue-600 dark:text-blue-400">✓</span> Expert
+            <span className="text-slate-700 dark:text-slate-300">✓</span> Expert
             Guidance
           </p>
         </div>
 
         {/* Footer Credit */}
-        <div className="mt-8 text-sm text-slate-500 dark:text-slate-400">
+        <div className="mt-6 text-sm text-slate-500 dark:text-slate-400">
           Developed by Cal State Fullerton and S-3 Research LLC
           {" • "}
           <Link
             href="/updates"
-            className="text-blue-600 transition hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+            className="text-slate-700 transition hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100"
           >
             Updates
           </Link>

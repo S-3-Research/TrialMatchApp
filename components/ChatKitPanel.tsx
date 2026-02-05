@@ -799,7 +799,7 @@ export function ChatKitPanel({
   }, [chatkit, isInitializingSession]);
   
   return (
-    <div className="chatkit-panel-container relative pb-8 flex h-[90vh] w-full rounded-2xl flex-col overflow-hidden bg-white shadow-sm transition-colors dark:bg-slate-900 z-0">
+    <div className="chatkit-panel-container relative pb-8 flex h-full w-full rounded-3xl flex-col overflow-hidden bg-white/40 backdrop-blur-2xl border border-slate-200/60 shadow-2xl transition-colors dark:bg-[#181D26] dark:border-slate-700/60 z-0" style={{ boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 15px rgba(0, 0, 0, 0.1)' }}>
       <ChatKit
         key={widgetInstanceKey}
         control={chatkit.control}
