@@ -35,17 +35,79 @@ body {
   font-family: var(--font-sans);
 }
 
-/* ChatKitPanel fixed width breakpoints */
-@media (min-width: 576px) and (max-width: 767px) {
-  .chatkit-panel-container {
-    min-width: 575px;
-    max-width: 575px;
-    margin: 0 auto;
+/* ChatKitPanel fixed width breakpoints - Force desktop layout minimum width to prevent internal jump */
+@media (min-width: 768px) and (max-width: 820px) {
+  .main-layout-container {
+    min-width: 779px !important;
+    width: auto !important; /* Let min-width take precedence over the percentage if needed */
   }
 }
 
-@media (min-width: 768px) {
-  .chatkit-panel-container {
-    min-width: 768px;
+@layer utilities {
+    .bg-noise {
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+    }
+
+    .glass-panel {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+    }
+    
+    .glass-header {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .dark .glass-header {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.3);
+    }
+
+    .text-gradient-logo {
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-image: linear-gradient(135deg, #1e293b 0%, #475569 100%);
+    }
+
+    .dark .text-gradient-logo {
+        background-image: linear-gradient(135deg, #f1f5f9 0%, #94a3b8 100%);
+    }
+}
+
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.5);
+    border-radius: 9999px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.8);
+  }
+
+  /* Firefox */
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+  }
+}
+
+@layer utilities {
+  .scroll-mask {
+    mask-image: linear-gradient(to bottom, transparent, black 2rem, black calc(100% - 2rem), transparent);
+    -webkit-mask-image: linear-gradient(to bottom, transparent, black 2rem, black calc(100% - 2rem), transparent);
   }
 }

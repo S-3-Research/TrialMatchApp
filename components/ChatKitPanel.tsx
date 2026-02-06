@@ -321,9 +321,15 @@ export function ChatKitPanel({
         console.log("[ChatKitPanel] getClientSecret completed");
         console.log({ isMounted: isMountedRef.current, currentSecret });
         if (isMountedRef.current && !currentSecret) {
-          setIsInitializingSession(false);
+          // Do not force isInitializingSession to false here.
+          // We wait for chatkit.control/session to be available in the useEffect hook.
+          // This ensures the Voice button doesn't appear before the Chat UI is ready.
+          console.log("[ChatKitPanel] Waiting for chatkit.control before setting isInitializingSession to false");
+        } else {
+             // For renewals (currentSecret present), we might not want to touch generic loading state
+             // but if we were loading, this logic would apply.
+             // However, !currentSecret covers the initial load case.
         }
-        console.log("[ChatKitPanel] isInitializingSession set to false");
       }
     },
     [isWorkflowConfigured, setErrorState]

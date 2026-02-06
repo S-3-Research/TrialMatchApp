@@ -104,49 +104,49 @@ export default function SettingsPage() {
 
   if (!isLoaded || isLoading) {
     return (
-      <main className="flex flex-1 flex-col items-center justify-center bg-slate-100 dark:bg-slate-950">
-        <div className="text-gray-500 dark:text-gray-400">Loading preferences...</div>
-      </main>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-lg text-slate-600 dark:text-slate-400">Loading preferences...</div>
+      </div>
     );
   }
 
   return (
-    <main className="flex flex-1 flex-col items-center bg-slate-100 dark:bg-slate-950 py-12">
-      <div className="w-full max-w-2xl px-4">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            Preferences
+    <div className="h-full w-full overflow-y-auto custom-scrollbar scroll-mask">
+      <div className="mx-auto max-w-4xl px-6 py-12">
+        <div className="rounded-2xl bg-white/50 backdrop-blur-xl border border-slate-200/50 shadow-sm dark:bg-slate-900/50 dark:border-slate-800/50 p-6 sm:p-8">
+          <div className="mb-8">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+            General Preferences
           </h1>
-          <p className="text-gray-600 dark:text-gray-300">
+          <p className="mt-2 text-slate-600 dark:text-slate-400">
             {isSignedIn 
               ? "Update your chat preferences. Changes will apply to new conversations."
               : "Update your chat preferences. Sign in to save them across devices."}
           </p>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm p-6">
-          {intakeData ? (
-            <IntakeFormEdit
-              initialData={intakeData}
-              onSave={handleSave}
-              onCancel={handleCancel}
-              isSaving={isSaving}
-            />
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-gray-500 dark:text-gray-400 mb-4">
-                No preferences found. Complete the intake form to get started.
-              </p>
-              <button
-                onClick={() => router.push("/chat")}
-                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition"
-              >
-                Go to Chat
-              </button>
-            </div>
-          )}
-        </div>
+        {intakeData ? (
+          <IntakeFormEdit
+            initialData={intakeData}
+            onSave={handleSave}
+            onCancel={handleCancel}
+            isSaving={isSaving}
+          />
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-slate-600 dark:text-slate-400 mb-4">
+              No preferences found. Complete the intake form to get started.
+            </p>
+            <button
+              onClick={() => router.push("/chat")}
+              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition shadow-sm"
+            >
+              Go to Chat
+            </button>
+          </div>
+        )}
       </div>
-    </main>
+    </div>
+    </div>
   );
 }

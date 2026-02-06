@@ -244,7 +244,7 @@ export default function App() {
       )}
 
       {/* Toggle Button - Fixed to top right */}
-      <button
+      {/* <button
         onClick={() => setIsResourcePanelOpen(!isResourcePanelOpen)}
         className="fixed right-6 top-20 z-50 rounded-full bg-white/90 p-2.5 text-slate-700 shadow-lg ring-1 ring-black/5 backdrop-blur-sm transition hover:bg-white hover:shadow-xl dark:bg-slate-800/90 dark:text-slate-300 dark:ring-white/10 dark:hover:bg-slate-800"
         aria-label={isResourcePanelOpen ? "Hide resources" : "Show resources"}
@@ -271,9 +271,9 @@ export default function App() {
             />
           )}
         </svg>
-      </button>
+      </button> */}
 
-      <div className="mx-auto w-[95%] max-w-6xl flex-1 flex flex-col py-0">
+      <div className="main-layout-container mx-auto w-[95%] max-w-6xl flex-1 flex flex-col py-6 pb-10 transition-all duration-300 ease-in-out">
         {/* Panels Container */}
         <div className="flex gap-4 flex-1">
             <div className="flex-1 flex flex-col">

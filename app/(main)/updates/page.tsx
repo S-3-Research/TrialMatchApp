@@ -3,8 +3,8 @@ import updatesData from "@/data/updates.json";
 
 export default function UpdatesPage() {
   return (
-    <main className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-12 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-950">
-      <div className="mx-auto max-w-4xl px-6">
+    <div className="h-full w-full overflow-y-auto custom-scrollbar scroll-mask">
+      <div className="mx-auto max-w-4xl px-6 py-12">
         {/* Header */}
         <div className="mb-8">
           <Link
@@ -56,7 +56,7 @@ export default function UpdatesPage() {
             {updatesData.latestUpdates.map((update, index) => (
               <div
                 key={index}
-                className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-800/50"
+                className="rounded-xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl p-6 shadow-sm"
               >
                 <div className="mb-2 flex items-center justify-between">
                   <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
@@ -106,7 +106,7 @@ export default function UpdatesPage() {
             {updatesData.plannedFeatures.map((feature, index) => (
               <div
                 key={index}
-                className="flex items-start rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800/50"
+                className="flex items-start rounded-lg border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl p-4"
               >
                 <span className="mr-3 mt-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-indigo-600 dark:border-indigo-400"></span>
                 <div>
@@ -145,10 +145,10 @@ export default function UpdatesPage() {
               const isWarning = issue.severity === "warning";
               const borderColor = isWarning
                 ? "border-amber-200 dark:border-amber-900/50"
-                : "border-slate-200 dark:border-slate-700";
+                : "border-slate-200 dark:border-white/10";
               const bgColor = isWarning
                 ? "bg-amber-50 dark:bg-amber-900/20"
-                : "bg-slate-50 dark:bg-slate-800/30";
+                : "bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl";
               const iconColor = isWarning
                 ? "text-amber-600 dark:text-amber-400"
                 : "text-slate-600 dark:text-slate-400";
@@ -202,6 +202,6 @@ export default function UpdatesPage() {
           Developed by Cal State Fullerton and S-3 Research LLC
         </div>
       </div>
-    </main>
+    </div>
   );
 }

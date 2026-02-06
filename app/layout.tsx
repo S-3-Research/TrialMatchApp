@@ -2,7 +2,6 @@ import Script from "next/script";
 import { ClerkProvider } from '@clerk/nextjs'
 import type { Metadata } from "next";
 import "./globals.css";
-import Header from "@/components/Header";
 import { FontSizeProvider } from "@/contexts/FontSizeContext";
 import { VoiceInputModeProvider } from "@/contexts/VoiceInputModeContext";
 import { ColorSchemeProvider } from "@/contexts/ColorSchemeContext";
@@ -29,15 +28,16 @@ export default function RootLayout({
             src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js"
             strategy="beforeInteractive"
           />
+          <Script 
+            src="https://unpkg.com/@phosphor-icons/web" 
+            strategy="lazyOnload" 
+          />
         </head>
-        <body className="antialiased min-h-screen flex flex-col bg-gradient-to-br from-slate-200 via-slate-100 to-slate-50">
+        <body className="antialiased min-h-screen flex flex-col bg-slate-950">
           <ColorSchemeProvider>
             <FontSizeProvider>
               <VoiceInputModeProvider>
-                <Header />
-                <div className="flex-1 flex flex-col pt-28">
-                  {children}
-                </div>
+                {children}
               </VoiceInputModeProvider>
             </FontSizeProvider>
           </ColorSchemeProvider>
