@@ -17,7 +17,7 @@ const Card = ({ children, className = '' }: { children: React.ReactNode, classNa
   </div>
 );
 
-const SectionHeading = ({ icon: Icon, title }: { icon: any, title: string }) => (
+const SectionHeading = ({ icon: Icon, title }: { icon: React.ElementType, title: string }) => (
   <div className="flex items-center gap-3 mb-6 border-b border-slate-200 pb-2">
     <Icon className="text-indigo-600" size={24} />
     <h2 className="text-xl font-bold text-slate-800">{title}</h2>
@@ -40,7 +40,7 @@ const Step = ({ num, title }: { num: number, title: string }) => (
   </div>
 );
 
-const PortalCard = ({ title, icon: Icon, color, features }: { title: string, icon: any, color: string, features: string[] }) => {
+const PortalCard = ({ title, icon: Icon, color, features }: { title: string, icon: React.ElementType, color: string, features: string[] }) => {
   const colorStyles: Record<string, string> = {
     violet: "border-t-violet-500 text-violet-700 bg-violet-50",
     emerald: "border-t-emerald-500 text-emerald-700 bg-emerald-50",

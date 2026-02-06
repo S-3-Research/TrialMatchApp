@@ -129,7 +129,7 @@ export default function TrialHub() {
             <div className="bg-white/10 backdrop-blur-md p-8 rounded-2xl border border-white/20">
                <div className="flex items-center gap-2 mb-6 text-indigo-300 uppercase text-xs font-bold tracking-widest"><Shield size={16}/> Security & Compliance</div>
                <p className="text-lg leading-relaxed mb-6 italic">
-                "TrialHub strictly adheres to GDPR and HIPAA data privacy standards. All patient information is rigorously anonymized to ensure the highest security standards for clinical data."
+                &ldquo;TrialHub strictly adheres to GDPR and HIPAA data privacy standards. All patient information is rigorously anonymized to ensure the highest security standards for clinical data.&rdquo;
                </p>
                <div className="flex items-center gap-3">
                  <div className="w-10 h-10 rounded-full bg-indigo-400"></div>
