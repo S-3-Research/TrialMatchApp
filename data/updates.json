@@ -1,10 +1,28 @@
 {
   "latestUpdates": [
     {
+      "version": "v0.6.0",
+      "date": "February 5, 2026",
+      "title": "Dynamic Personalization & Complete UI Redesign",
+      "isLatest": true,
+      "items": [
+        "Personalized starting questions based on user intent (trial matching vs. learning)",
+        "Dynamic greetings adapted to user role (patient vs. caregiver)",
+        "4 distinct sets of starter prompts for different user profiles",
+        "Complete homepage visual redesign with cinematic glass morphism aesthetic",
+        "Enhanced glassmorphism effects with backdrop blur and gradient overlays",
+        "Redesigned feature cards with hover animations and improved iconography",
+        "Optimized responsive layout for all screen sizes (mobile, tablet, desktop)",
+        "Interactive mobile navigation with full-screen overlay menu",
+        "Improved typography hierarchy and brand consistency across all breakpoints",
+        "Better visual hierarchy with noise textures and decorative grid lines"
+      ]
+    },
+    {
       "version": "v0.5.0",
       "date": "January 28, 2026",
       "title": "Voice Input Enhancements & User Feedback",
-      "isLatest": true,
+      "isLatest": false,
       "items": [
         "Added dual voice input modes: Web Speech API and OpenAI Whisper",
         "Voice input mode selector in header (switch between free real-time and accurate paid options)",
@@ -79,12 +97,5 @@
       "description": "Read AI responses aloud for users with visual impairments"
     }
   ],
-  "knownIssues": [
-    {
-      "title": "Homepage Height Adjustment",
-      "description": "Homepage content height needs fine-tuning to prevent scrollbar",
-      "priority": "Low",
-      "severity": "info"
-    }
-  ]
+  "knownIssues": []
 }
