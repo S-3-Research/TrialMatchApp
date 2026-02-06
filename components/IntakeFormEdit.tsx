@@ -60,7 +60,7 @@ export function IntakeFormEdit({ initialData, onSave, onCancel, isSaving = false
               Myself
             </div>
             <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              I'm looking for clinical trials for my own condition
+              I&apos;m looking for clinical trials for my own condition
             </div>
           </button>
 
@@ -80,7 +80,7 @@ export function IntakeFormEdit({ initialData, onSave, onCancel, isSaving = false
               Someone I care for
             </div>
             <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              I'm a caregiver helping someone find clinical trials
+              I&apos;m a caregiver helping someone find clinical trials
             </div>
           </button>
         </div>

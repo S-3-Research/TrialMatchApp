@@ -112,7 +112,7 @@ export default function Header() {
                             ].map((option) => (
                                 <button
                                     key={option.value}
-                                    onClick={() => setMode(option.value as any)}
+                                    onClick={() => setMode(option.value as 'web-speech' | 'whisper')}
                                     className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs transition-all ${
                                         mode === option.value
                                             ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white font-medium ring-1 ring-black/5 dark:ring-white/10' 
@@ -134,7 +134,7 @@ export default function Header() {
                             {['light', 'dark', 'system'].map((t) => (
                                 <button
                                     key={t}
-                                    onClick={() => handleThemeChange(t as any)}
+                                    onClick={() => handleThemeChange(t as 'light' | 'dark' | 'system')}
                                     className={`flex-1 text-xs py-1.5 rounded-md capitalize transition-all ${
                                         preference === t 
                                             ? 'bg-white dark:bg-slate-700 shadow-sm text-slate-900 dark:text-white font-medium ring-1 ring-black/5 dark:ring-white/10' 

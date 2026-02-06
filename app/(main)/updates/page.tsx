@@ -140,60 +140,8 @@ export default function UpdatesPage() {
             </svg>
             Known Issues
           </h2>
-          <div className="space-y-3">
-            {updatesData.knownIssues.map((issue, index) => {
-              const isWarning = issue.severity === "warning";
-              const borderColor = isWarning
-                ? "border-amber-200 dark:border-amber-900/50"
-                : "border-slate-200 dark:border-white/10";
-              const bgColor = isWarning
-                ? "bg-amber-50 dark:bg-amber-900/20"
-                : "bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl";
-              const iconColor = isWarning
-                ? "text-amber-600 dark:text-amber-400"
-                : "text-slate-600 dark:text-slate-400";
-              const titleColor = isWarning
-                ? "text-amber-900 dark:text-amber-200"
-                : "text-slate-800 dark:text-slate-200";
-              const descColor = isWarning
-                ? "text-amber-800 dark:text-amber-300"
-                : "text-slate-600 dark:text-slate-400";
-              const priorityColor = isWarning
-                ? "text-amber-700 dark:text-amber-400"
-                : "text-slate-600 dark:text-slate-400";
-
-              return (
-                <div
-                  key={index}
-                  className={`flex items-start rounded-lg border p-4 ${borderColor} ${bgColor}`}
-                >
-                  <svg
-                    className={`mr-3 mt-0.5 h-5 w-5 flex-shrink-0 ${iconColor}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d={
-                        isWarning
-                          ? "M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                          : "M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      }
-                    />
-                  </svg>
-                  <div>
-                    <h4 className={`font-medium ${titleColor}`}>{issue.title}</h4>
-                    <p className={`text-sm ${descColor}`}>{issue.description}</p>
-                    <span className={`mt-1 inline-block text-xs ${priorityColor}`}>
-                      Priority: {issue.priority}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="glass-panel p-6 text-center">
+            <p className="text-slate-600 dark:text-slate-400">No known issues at this time! 🎉</p>
           </div>
         </section>
 
