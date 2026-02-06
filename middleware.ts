@@ -3,17 +3,20 @@ import { NextResponse } from 'next/server'
 
 const isProtectedRoute = createRouteMatcher([
   '/dashboard(.*)', 
-  '/api(.*)', // 所有 API 都需要认证保护
-  '/chat(.*)',
-  // '/(.*)'  <--- 建议暂时注释掉这个，因为它太霸道了，容易误伤登录页
+  // Don't blanket protect all /api - use whitelist approach instead
+  // '/chat(.*)', // Allow guest access to chat with intake form
 ]);
 
 // API 路由白名单（不需要 Clerk 认证的公开 API）
 const isPublicApiRoute = createRouteMatcher([
   '/api/create-session',  // ChatKit 创建 session（在登录前调用）
   '/api/whisper',         // Whisper 语音转文字 API
-  '/api/test',            // 测试 API
-  // /api/tools 需要认证保护，因为用户已登录后才能调用
+  '/api/tools',           // Tools API - authentication checked per-tool in handler
+]);
+
+// Protected API routes (require authentication)
+const isProtectedApiRoute = createRouteMatcher([
+  '/api/migrate-intake',  // Migration needs auth
 ]);
 
 // 开发阶段的简单密码保护
@@ -53,14 +56,23 @@ export default clerkMiddleware(async (auth, req) => {
   const devPasswordResponse = checkDevPassword(req);
   if (devPasswordResponse) return devPasswordResponse;
 
-  // 公开 API 路由不需要 Clerk 认证
+  // 公开 API 路由不需要 Clerk 认证 - 必须在 protect() 之前返回
   if (isPublicApiRoute(req)) {
     console.log("Public API route, skipping Clerk auth:", req.url);
-    return;
+    return NextResponse.next();
   }
 
-  // 然后执行 Clerk 认证
-  if (isProtectedRoute(req)) await auth.protect()
+  // Protected API routes require auth
+  if (isProtectedApiRoute(req)) {
+    await auth.protect();
+    console.log("Protected API route, auth required:", req.url);
+    return NextResponse.next();
+  }
+
+  // 然后执行 Clerk 认证 for other protected routes
+  if (isProtectedRoute(req)) {
+    await auth.protect();
+  }
   console.log("Middleware is running for:", req.url);
 })
 

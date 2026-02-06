@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChatKit, useChatKit } from "@openai/chatkit-react";
+import { useUser } from "@clerk/nextjs";
 import {
   STARTER_PROMPTS,
   PLACEHOLDER_INPUT,
@@ -9,7 +10,10 @@ import {
   CREATE_SESSION_ENDPOINT,
   WORKFLOW_ID,
   getThemeConfig,
+  getStarterPromptsForUser,
+  getGreetingForUser,
 } from "@/lib/config";
+import { IntakeData } from "@/lib/types/intake";
 import { ErrorOverlay } from "./ErrorOverlay";
 import { VoiceInputButton } from "./VoiceInputButton";
 import { VoiceInputButtonWhisper } from "./VoiceInputButtonWhisper";
@@ -73,10 +77,12 @@ export function ChatKitPanel({
   onThemeRequest,
   onOpenResourcePanel,
 }: ChatKitPanelProps) {
+  const { isSignedIn } = useUser();
   const { fontSize } = useFontSize();
   const processedFacts = useRef(new Set<string>());
   const [errors, setErrors] = useState<ErrorState>(() => createInitialErrors());
   const [isInitializingSession, setIsInitializingSession] = useState(true);
+  const [intakeData, setIntakeData] = useState<IntakeData | null>(null);
   const isMountedRef = useRef(true);
   const [scriptStatus, setScriptStatus] = useState<
     "pending" | "ready" | "error"
@@ -95,6 +101,24 @@ export function ChatKitPanel({
     return () => {
       isMountedRef.current = false;
     };
+  }, []);
+
+  // Load intake data from localStorage on component mount
+  useEffect(() => {
+    if (!isBrowser) {
+      return;
+    }
+
+    const stored = localStorage.getItem('intake_data');
+    if (stored) {
+      try {
+        const parsedData = JSON.parse(stored);
+        console.log('[ChatKitPanel] Loaded intake data on mount:', parsedData);
+        setIntakeData(parsedData);
+      } catch (error) {
+        console.error('[ChatKitPanel] Failed to parse intake data on mount:', error);
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -210,20 +234,61 @@ export function ChatKitPanel({
       }
 
       try {
+        // Read intake data from localStorage
+        let parsedIntakeData = null;
+        if (isBrowser) {
+          const stored = localStorage.getItem('intake_data');
+          console.log('[ChatKitPanel] Raw localStorage:', stored);
+          if (stored) {
+            try {
+              parsedIntakeData = JSON.parse(stored);
+              console.log('[ChatKitPanel] Parsed intake data:', parsedIntakeData);
+              // Store in component state for use in startScreen configuration
+              if (isMountedRef.current) {
+                setIntakeData(parsedIntakeData);
+              }
+            } catch (error) {
+              console.error('[ChatKitPanel] Failed to parse intake data:', error);
+            }
+          } else {
+            console.log('[ChatKitPanel] No intake data in localStorage');
+          }
+        }
+
+        // For guest users, maintain stable user ID to preserve chat history
+        let guestUserId = null;
+        if (isBrowser && !isSignedIn) {
+          const GUEST_ID_KEY = 'chatkit_guest_user_id';
+          guestUserId = localStorage.getItem(GUEST_ID_KEY);
+          if (!guestUserId) {
+            guestUserId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            localStorage.setItem(GUEST_ID_KEY, guestUserId);
+            console.log('[ChatKitPanel] Generated new guest ID:', guestUserId);
+          } else {
+            console.log('[ChatKitPanel] Using existing guest ID:', guestUserId);
+          }
+        }
+
+        const requestBody = {
+          workflow: { id: WORKFLOW_ID },
+          intake_data: parsedIntakeData, // Pass to backend for processing
+          guest_user_id: guestUserId, // Pass stable guest ID to preserve history
+          chatkit_configuration: {
+            // enable attachments
+            file_upload: {
+              enabled: true,
+            },
+          },
+        };
+        
+        console.log('[ChatKitPanel] Sending to /api/create-session:', JSON.stringify(requestBody, null, 2));
+
         const response = await fetch(CREATE_SESSION_ENDPOINT, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            workflow: { id: WORKFLOW_ID },
-            chatkit_configuration: {
-              // enable attachments
-              file_upload: {
-                enabled: true,
-              },
-            },
-          }),
+          body: JSON.stringify(requestBody),
         });
 
         const raw = await response.text();
@@ -282,15 +347,32 @@ export function ChatKitPanel({
         console.log("[ChatKitPanel] getClientSecret completed");
         console.log({ isMounted: isMountedRef.current, currentSecret });
         if (isMountedRef.current && !currentSecret) {
-          setIsInitializingSession(false);
+          // Do not force isInitializingSession to false here.
+          // We wait for chatkit.control/session to be available in the useEffect hook.
+          // This ensures the Voice button doesn't appear before the Chat UI is ready.
+          console.log("[ChatKitPanel] Waiting for chatkit.control before setting isInitializingSession to false");
+        } else {
+             // For renewals (currentSecret present), we might not want to touch generic loading state
+             // but if we were loading, this logic would apply.
+             // However, !currentSecret covers the initial load case.
         }
-        console.log("[ChatKitPanel] isInitializingSession set to false");
       }
     },
     [isWorkflowConfigured, setErrorState]
   );
 
   const baseSize = fontSize === "small" ? 14 : fontSize === "large" ? 18 : 16;
+  
+  // Get dynamic greeting and prompts based on intake data
+  const greeting = getGreetingForUser(intakeData);
+  const prompts = getStarterPromptsForUser(intakeData);
+  
+  console.log('[ChatKitPanel] Configuration:', {
+    intakeData,
+    greeting,
+    promptsCount: prompts.length,
+    firstPrompt: prompts[0]?.label,
+  });
   
   const chatkit = useChatKit({
     api: { getClientSecret },
@@ -299,8 +381,8 @@ export function ChatKitPanel({
       ...getThemeConfig(theme, baseSize),
     },
     startScreen: {
-      greeting: GREETING,
-      prompts: STARTER_PROMPTS,
+      greeting,
+      prompts,
     },
     composer: {
       placeholder: PLACEHOLDER_INPUT,
@@ -417,6 +499,14 @@ export function ChatKitPanel({
             }),
           });
 
+          // Check if response is HTML (error page) instead of JSON
+          const contentType = response.headers.get("content-type");
+          if (!response.ok || !contentType?.includes("application/json")) {
+            const text = await response.text();
+            console.error("[ChatKitPanel] get_weather non-JSON response:", text.substring(0, 200));
+            return { success: false, error: `Server error (${response.status}): Unable to fetch weather data` };
+          }
+
           const data = await response.json();
           
           // Return widget data - Agent Builder will handle the conversational text
@@ -441,12 +531,20 @@ export function ChatKitPanel({
           return data;
         } catch (error) {
           console.error("[ChatKitPanel] get_weather error", error);
-          return { success: false, error: "Failed to fetch weather data" };
+          return { success: false, error: "Failed to fetch weather data. Please try again." };
         }
       }
 
       // Supabase tools
       if (invocation.name === "get_user_profile") {
+        // Check authentication before making API call
+        if (!isSignedIn) {
+          if (isDev) {
+            console.debug("[ChatKitPanel] get_user_profile blocked - user not signed in");
+          }
+          return { success: false, error: "User profile requires authentication. Please sign in to save your preferences." };
+        }
+        
         try {
           if (isDev) {
             console.debug("[ChatKitPanel] get_user_profile", invocation.params);
@@ -461,15 +559,37 @@ export function ChatKitPanel({
             }),
           });
 
+          // Check if response is HTML (error page) instead of JSON
+          const contentType = response.headers.get("content-type");
+          if (!response.ok || !contentType?.includes("application/json")) {
+            const text = await response.text();
+            console.error("[ChatKitPanel] get_user_profile non-JSON response:", text.substring(0, 200));
+            
+            // Guest users don't have profiles - this is expected
+            if (response.status === 401 || response.status === 403) {
+              return { success: false, error: "User profile requires authentication. Please sign in to save your preferences." };
+            }
+            
+            return { success: false, error: `Server error (${response.status}): Unable to get user profile` };
+          }
+
           const data = await response.json();
           return data;
         } catch (error) {
           console.error("[ChatKitPanel] get_user_profile error", error);
-          return { success: false, error: "Failed to get user profile" };
+          return { success: false, error: "Failed to get user profile. This feature requires authentication." };
         }
       }
 
       if (invocation.name === "save_user_profile") {
+        // Check authentication before making API call
+        if (!isSignedIn) {
+          if (isDev) {
+            console.debug("[ChatKitPanel] save_user_profile blocked - user not signed in");
+          }
+          return { success: false, error: "Saving profile requires authentication. Please sign in to save your preferences." };
+        }
+        
         try {
           if (isDev) {
             console.debug("[ChatKitPanel] save_user_profile", invocation.params);
@@ -484,15 +604,37 @@ export function ChatKitPanel({
             }),
           });
 
+          // Check if response is HTML (error page) instead of JSON
+          const contentType = response.headers.get("content-type");
+          if (!response.ok || !contentType?.includes("application/json")) {
+            const text = await response.text();
+            console.error("[ChatKitPanel] save_user_profile non-JSON response:", text.substring(0, 200));
+            
+            // Guest users can't save profiles - this is expected
+            if (response.status === 401 || response.status === 403) {
+              return { success: false, error: "Saving profile requires authentication. Please sign in to save your preferences." };
+            }
+            
+            return { success: false, error: `Server error (${response.status}): Unable to save user profile` };
+          }
+
           const data = await response.json();
           return data;
         } catch (error) {
           console.error("[ChatKitPanel] save_user_profile error", error);
-          return { success: false, error: "Failed to save user profile" };
+          return { success: false, error: "Failed to save user profile. This feature requires authentication." };
         }
       }
 
       if (invocation.name === "get_trial_interests") {
+        // Check authentication before making API call
+        if (!isSignedIn) {
+          if (isDev) {
+            console.debug("[ChatKitPanel] get_trial_interests blocked - user not signed in");
+          }
+          return { success: false, error: "Accessing saved interests requires authentication. Please sign in to view your saved trials." };
+        }
+        
         try {
           if (isDev) {
             console.debug("[ChatKitPanel] get_trial_interests", invocation.params);
@@ -507,15 +649,37 @@ export function ChatKitPanel({
             }),
           });
 
+          // Check if response is HTML (error page) instead of JSON
+          const contentType = response.headers.get("content-type");
+          if (!response.ok || !contentType?.includes("application/json")) {
+            const text = await response.text();
+            console.error("[ChatKitPanel] get_trial_interests non-JSON response:", text.substring(0, 200));
+            
+            // Guest users can't access saved interests - this is expected
+            if (response.status === 401 || response.status === 403) {
+              return { success: false, error: "Accessing saved interests requires authentication. Please sign in to view your saved trials." };
+            }
+            
+            return { success: false, error: `Server error (${response.status}): Unable to get trial interests` };
+          }
+
           const data = await response.json();
           return data;
         } catch (error) {
           console.error("[ChatKitPanel] get_trial_interests error", error);
-          return { success: false, error: "Failed to get trial interests" };
+          return { success: false, error: "Failed to get trial interests. This feature requires authentication." };
         }
       }
 
       if (invocation.name === "save_trial_interest") {
+        // Check authentication before making API call
+        if (!isSignedIn) {
+          if (isDev) {
+            console.debug("[ChatKitPanel] save_trial_interest blocked - user not signed in");
+          }
+          return { success: false, error: "Saving trial interests requires authentication. Please sign in to save trials for later." };
+        }
+        
         try {
           if (isDev) {
             console.debug("[ChatKitPanel] save_trial_interest", invocation.params);
@@ -530,11 +694,25 @@ export function ChatKitPanel({
             }),
           });
 
+          // Check if response is HTML (error page) instead of JSON
+          const contentType = response.headers.get("content-type");
+          if (!response.ok || !contentType?.includes("application/json")) {
+            const text = await response.text();
+            console.error("[ChatKitPanel] save_trial_interest non-JSON response:", text.substring(0, 200));
+            
+            // Guest users can't save interests - this is expected
+            if (response.status === 401 || response.status === 403) {
+              return { success: false, error: "Saving trial interests requires authentication. Please sign in to save trials for later." };
+            }
+            
+            return { success: false, error: `Server error (${response.status}): Unable to save trial interest` };
+          }
+
           const data = await response.json();
           return data;
         } catch (error) {
           console.error("[ChatKitPanel] save_trial_interest error", error);
-          return { success: false, error: "Failed to save trial interest" };
+          return { success: false, error: "Failed to save trial interest. This feature requires authentication." };
         }
       }
 
@@ -554,11 +732,19 @@ export function ChatKitPanel({
             }),
           });
 
+          // Check if response is HTML (error page) instead of JSON
+          const contentType = response.headers.get("content-type");
+          if (!response.ok || !contentType?.includes("application/json")) {
+            const text = await response.text();
+            console.error("[ChatKitPanel] get_trials non-JSON response:", text.substring(0, 200));
+            return { success: false, error: `Server error (${response.status}): Unable to search clinical trials` };
+          }
+
           const data = await response.json();
           return data;
         } catch (error) {
           console.error("[ChatKitPanel] get_trials error", error);
-          return { success: false, error: "Failed to search clinical trials" };
+          return { success: false, error: "Failed to search clinical trials. Please try again." };
         }
       }
 
@@ -599,6 +785,9 @@ export function ChatKitPanel({
       setIsInitializingSession(false);
     }
   }, [chatkit.control, isInitializingSession]);
+
+  // Note: Intake context is now passed via workflow.state_variables during session creation
+  // See /app/api/create-session/route.ts for implementation
 
   // Handle voice input transcript
   const handleVoiceTranscript = useCallback((transcript: string) => {
@@ -653,7 +842,7 @@ export function ChatKitPanel({
   }, [chatkit, isInitializingSession]);
   
   return (
-    <div className="chatkit-panel-container relative pb-8 flex h-[90vh] w-full rounded-2xl flex-col overflow-hidden bg-white shadow-sm transition-colors dark:bg-slate-900 z-0">
+    <div className="chatkit-panel-container relative pb-8 flex h-full w-full rounded-3xl flex-col overflow-hidden bg-white/40 backdrop-blur-2xl border border-slate-200/60 shadow-2xl transition-colors dark:bg-[#181D26] dark:border-slate-700/60 z-0" style={{ boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 15px rgba(0, 0, 0, 0.1)' }}>
       <ChatKit
         key={widgetInstanceKey}
         control={chatkit.control}

@@ -31,41 +31,67 @@ export async function POST(request: Request): Promise<Response> {
       return new Response("Missing OpenAI API Key", { status: 500 });
 
     // -------------------------------------------------------------
-    // 改动点 1: 真正鉴权 (Clerk)
+    // 改动点 1: 支持 guest 用户
     // -------------------------------------------------------------
-    // const { userId } = auth(); // 一行代码搞定鉴权
-    const { userId, debug } = await auth(); // 解构出 debug
+    const { userId, debug } = await auth();
 
     console.log("------- DEBUG AUTH -------");
     console.log("User ID:", userId);
-    // console.log("Debug Info:", debug()); // 某些版本 Clerk 支持打印 debug 信息
-    console.log("Cookies:", request.headers.get("cookie")); // 看看请求头里到底有没有 Cookie
+    console.log("Cookies:", request.headers.get("cookie"));
     console.log("--------------------------");
-
-    // 如果用户没登录，直接拒绝，保护你的 API 不被白嫖
-    if (!userId) {
-      return new Response("Unauthorized: Please sign in.", { status: 401 });
-    }
 
     // -------------------------------------------------------------
     // 改动点 2: parse 请求体
     // -------------------------------------------------------------
     const parsedBody = await request.json();
+    
+    // Guest users: use stable ID from request body to preserve chat history
+    // If guest_user_id is provided in the request, use it; otherwise generate a new one
+    let effectiveUserId = userId;
+    if (!userId) {
+      effectiveUserId = parsedBody?.guest_user_id || `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      console.log("[create-session] Guest user ID:", effectiveUserId, parsedBody?.guest_user_id ? "(provided)" : "(generated)");
+    }
+    
+    console.log("Effective User ID:", effectiveUserId);
+
     const resolvedWorkflowId =
       parsedBody?.workflow?.id ?? parsedBody?.workflowId ?? WORKFLOW_ID;
 
     // -------------------------------------------------------------
-    // 3. 发送给 OpenAI / ChatKit
+    // 改动点 3: 读取 intake data 并传递到 workflow state_variables
+    // -------------------------------------------------------------
+    const intakeData = parsedBody?.intake_data;
+    const stateVariables: Record<string, string | number | boolean> = {};
+    
+    if (intakeData) {
+      console.log("[create-session] Intake data received:", intakeData);
+      
+      // Add intake data to workflow state variables
+      if (intakeData.role) stateVariables.user_role = intakeData.role;
+      if (intakeData.response_style) stateVariables.response_style = intakeData.response_style;
+      if (intakeData.intent) stateVariables.user_intent = intakeData.intent;
+      
+      console.log("[create-session] State variables:", stateVariables);
+    }
+
+    // -------------------------------------------------------------
+    // 4. 发送给 OpenAI / ChatKit
     // -------------------------------------------------------------
     const upstreamUrl = `${
       process.env.CHATKIT_API_BASE || "https://api.openai.com"
     }/v1/chatkit/sessions`;
 
     const payload: Record<string, unknown> = {
-      workflow: { id: resolvedWorkflowId },
-      user: userId, // 告诉 OpenAI 这个用户的 Clerk ID，方便后台统计
+      workflow: { 
+        id: resolvedWorkflowId,
+        ...(Object.keys(stateVariables).length > 0 && { state_variables: stateVariables })
+      },
+      user: effectiveUserId, // Use effectiveUserId (guest or authenticated)
       chatkit_configuration: parsedBody?.chatkit_configuration || {},
     };
+
+    console.log("[create-session] Final payload being sent:", JSON.stringify(payload, null, 2));
 
     const upstreamResponse = await fetch(upstreamUrl, {
       method: "POST",
