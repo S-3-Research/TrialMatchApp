@@ -10,7 +10,10 @@ import {
   CREATE_SESSION_ENDPOINT,
   WORKFLOW_ID,
   getThemeConfig,
+  getStarterPromptsForUser,
+  getGreetingForUser,
 } from "@/lib/config";
+import { IntakeData } from "@/lib/types/intake";
 import { ErrorOverlay } from "./ErrorOverlay";
 import { VoiceInputButton } from "./VoiceInputButton";
 import { VoiceInputButtonWhisper } from "./VoiceInputButtonWhisper";
@@ -79,6 +82,7 @@ export function ChatKitPanel({
   const processedFacts = useRef(new Set<string>());
   const [errors, setErrors] = useState<ErrorState>(() => createInitialErrors());
   const [isInitializingSession, setIsInitializingSession] = useState(true);
+  const [intakeData, setIntakeData] = useState<IntakeData | null>(null);
   const isMountedRef = useRef(true);
   const [scriptStatus, setScriptStatus] = useState<
     "pending" | "ready" | "error"
@@ -97,6 +101,24 @@ export function ChatKitPanel({
     return () => {
       isMountedRef.current = false;
     };
+  }, []);
+
+  // Load intake data from localStorage on component mount
+  useEffect(() => {
+    if (!isBrowser) {
+      return;
+    }
+
+    const stored = localStorage.getItem('intake_data');
+    if (stored) {
+      try {
+        const parsedData = JSON.parse(stored);
+        console.log('[ChatKitPanel] Loaded intake data on mount:', parsedData);
+        setIntakeData(parsedData);
+      } catch (error) {
+        console.error('[ChatKitPanel] Failed to parse intake data on mount:', error);
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -213,14 +235,18 @@ export function ChatKitPanel({
 
       try {
         // Read intake data from localStorage
-        let intakeData = null;
+        let parsedIntakeData = null;
         if (isBrowser) {
           const stored = localStorage.getItem('intake_data');
           console.log('[ChatKitPanel] Raw localStorage:', stored);
           if (stored) {
             try {
-              intakeData = JSON.parse(stored);
-              console.log('[ChatKitPanel] Parsed intake data:', intakeData);
+              parsedIntakeData = JSON.parse(stored);
+              console.log('[ChatKitPanel] Parsed intake data:', parsedIntakeData);
+              // Store in component state for use in startScreen configuration
+              if (isMountedRef.current) {
+                setIntakeData(parsedIntakeData);
+              }
             } catch (error) {
               console.error('[ChatKitPanel] Failed to parse intake data:', error);
             }
@@ -245,7 +271,7 @@ export function ChatKitPanel({
 
         const requestBody = {
           workflow: { id: WORKFLOW_ID },
-          intake_data: intakeData, // Pass to backend for processing
+          intake_data: parsedIntakeData, // Pass to backend for processing
           guest_user_id: guestUserId, // Pass stable guest ID to preserve history
           chatkit_configuration: {
             // enable attachments
@@ -337,6 +363,17 @@ export function ChatKitPanel({
 
   const baseSize = fontSize === "small" ? 14 : fontSize === "large" ? 18 : 16;
   
+  // Get dynamic greeting and prompts based on intake data
+  const greeting = getGreetingForUser(intakeData);
+  const prompts = getStarterPromptsForUser(intakeData);
+  
+  console.log('[ChatKitPanel] Configuration:', {
+    intakeData,
+    greeting,
+    promptsCount: prompts.length,
+    firstPrompt: prompts[0]?.label,
+  });
+  
   const chatkit = useChatKit({
     api: { getClientSecret },
     theme: {
@@ -344,8 +381,8 @@ export function ChatKitPanel({
       ...getThemeConfig(theme, baseSize),
     },
     startScreen: {
-      greeting: GREETING,
-      prompts: STARTER_PROMPTS,
+      greeting,
+      prompts,
     },
     composer: {
       placeholder: PLACEHOLDER_INPUT,

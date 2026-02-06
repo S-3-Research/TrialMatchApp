@@ -55,7 +55,7 @@ export default function Home() {
       `}} />
 
       <div className="min-h-screen md:h-screen w-full md:overflow-hidden flex items-center justify-center p-0 md:p-6 lg:p-8 bg-slate-950">
-          <main className="relative w-full min-h-screen md:h-full max-w-[1920px] mx-auto bg-slate-900 md:rounded-[2rem] overflow-hidden shadow-2xl ring-1 ring-white/10 flex flex-col">
+          <main className="relative w-full md:h-full max-w-[1920px] mx-auto bg-slate-900 md:rounded-[2rem] overflow-hidden shadow-2xl ring-1 ring-white/10 flex flex-col">
             
             {/* 1. Background Image Layer with Cinematic Blur */}
             <div className="absolute inset-0 z-0">
