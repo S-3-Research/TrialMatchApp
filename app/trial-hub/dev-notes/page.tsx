@@ -87,7 +87,7 @@ export default function DevelopmentNotesPage() {
             <div className="space-y-3">
                <h3 className="font-semibold text-slate-700 mb-2">Key Data Models</h3>
                <Entity name="Clinician" desc="Identity, Credentials, Specialty, Patients" />
-               <Entity name="Pharma" desc="Sponsor Company, Teams, Permissions" />
+               <Entity name="Sponsor/CRO" desc="Sponsor Company, Teams, Permissions" />
                <Entity name="Trial" desc="Protocol, I/E Criteria, Sites, Goals" />
                <Entity name="Match" desc="Trial ↔ Clinician Relationship State" />
             </div>
@@ -117,7 +117,7 @@ export default function DevelopmentNotesPage() {
               icon={ShieldCheck} 
               color="violet"
               features={[
-                "User Management (Clinician/Pharma)",
+                "User Management (Clinician/Sponsor/CRO)",
                 "Trial Lifecycle & Approvals",
                 "Matching Engine (Manual/Auto)",
                 "Ops Analytics & Funnels",
@@ -137,7 +137,7 @@ export default function DevelopmentNotesPage() {
               ]}
             />
             <PortalCard 
-              title="Pharma" 
+              title="Sponsor/CRO" 
               icon={Building2} 
               color="blue"
               features={[
@@ -181,7 +181,7 @@ export default function DevelopmentNotesPage() {
               <ul className="space-y-3 text-sm">
                 <li className="flex gap-2">
                   <span className="text-blue-500">●</span> 
-                  <span>Pharma only sees <b>own trials</b> & aggregates.</span>
+                  <span>Sponsor/CRO only sees <b>own trials</b> & aggregates.</span>
                 </li>
                 <li className="flex gap-2">
                   <span className="text-emerald-500">●</span> 

@@ -48,7 +48,7 @@ export default function TrialHub() {
               href="/trial-hub/app"
               className="px-8 py-3 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800 flex items-center gap-2 transition-all shadow-lg shadow-slate-200"
             >
-              Pharma Portal <ArrowRight size={18} />
+              Sponsor/CRO Portal <ArrowRight size={18} />
             </Link>
             <Link 
               href="/trial-hub/app"
@@ -106,7 +106,7 @@ export default function TrialHub() {
                 <div className="flex gap-4">
                   <div className="shrink-0 w-8 h-8 rounded-full bg-indigo-500/30 flex items-center justify-center"><CheckCircle2 size={18}/></div>
                   <div>
-                    <h4 className="font-bold mb-1">Sponsors (Pharma)</h4>
+                    <h4 className="font-bold mb-1">Sponsors (Sponsor/CRO)</h4>
                     <p className="text-indigo-200 text-sm">Efficiently publish protocols, quickly identify high-quality sites, and monitor recruitment progress in real-time.</p>
                   </div>
                 </div>
@@ -147,7 +147,7 @@ export default function TrialHub() {
       <section className="py-16 px-6 text-center border-t border-slate-200">
         <p className="text-slate-400 font-bold uppercase text-xs tracking-[0.2em] mb-8">Trusted By Industry Leaders</p>
         <div className="flex flex-wrap justify-center gap-12 opacity-50 grayscale">
-          <div className="font-black text-2xl italic">PharmaCore</div>
+          <div className="font-black text-2xl italic">SponsorCore</div>
           <div className="font-black text-2xl italic">MediLife</div>
           <div className="font-black text-2xl italic">BioGlobal</div>
           <div className="font-black text-2xl italic">ClinicalAI</div>

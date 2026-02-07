@@ -32,7 +32,7 @@ const INITIAL_TRIALS = [
     therapeuticArea: "Oncology",
     goal: 50,
     enrolled: 12,
-    sponsor: "PharmaCore",
+    sponsor: "SponsorCore",
   },
   {
     id: "T2",
@@ -52,7 +52,7 @@ const INITIAL_TRIALS = [
     therapeuticArea: "Cardiology",
     goal: 200,
     enrolled: 0,
-    sponsor: "PharmaCore",
+    sponsor: "SponsorCore",
   },
 ];
 
@@ -532,7 +532,7 @@ const ClinicianPortal = ({ trials }: { trials: typeof INITIAL_TRIALS }) => {
                       New Trial Invitation
                     </h4>
                     <p className="text-teal-700">
-                      Phase III Lung Cancer Study • PharmaCore
+                      Phase III Lung Cancer Study • SponsorCore
                     </p>
                   </div>
                 </div>
@@ -673,8 +673,8 @@ const ClinicianPortal = ({ trials }: { trials: typeof INITIAL_TRIALS }) => {
   );
 };
 
-// --- 3. Pharma Portal ---
-const PharmaPortal = ({ trials }: { trials: typeof INITIAL_TRIALS }) => {
+// --- 3. Sponsor/CRO Portal ---
+const SponsorCROPortal = ({ trials }: { trials: typeof INITIAL_TRIALS }) => {
   const [view, setView] = useState("DASHBOARD");
   const [step, setStep] = useState(1);
 
@@ -682,7 +682,7 @@ const PharmaPortal = ({ trials }: { trials: typeof INITIAL_TRIALS }) => {
     <div className="flex h-full bg-white">
       <aside className="w-64 flex-shrink-0 space-y-2 border-r border-slate-200/60 bg-white/50 p-4 backdrop-blur-xl">
         <div className="mb-8 rounded-xl bg-slate-900 px-4 py-3 font-bold tracking-tight text-white shadow-lg shadow-slate-200">
-          PHARMA SPONSOR
+          SPONSOR/CRO
         </div>
         <SidebarItem
           icon={LayoutDashboard}
@@ -977,7 +977,7 @@ const PharmaPortal = ({ trials }: { trials: typeof INITIAL_TRIALS }) => {
 // --- Main App Entry ---
 export default function TrialHubApp() {
   const [currentPortal, setCurrentPortal] = useState<
-    "ADMIN" | "CLINICIAN" | "PHARMA"
+    "ADMIN" | "CLINICIAN" | "SPONSOR_CRO"
   >("ADMIN");
 
   const getPortalStyles = (portal: typeof currentPortal) => {
@@ -986,7 +986,7 @@ export default function TrialHubApp() {
         return "bg-gradient-to-br from-violet-50/50 via-white to-indigo-50/50";
       case "CLINICIAN":
         return "bg-gradient-to-br from-teal-50/50 via-white to-emerald-50/50";
-      case "PHARMA":
+      case "SPONSOR_CRO":
         return "bg-gradient-to-br from-slate-50 via-white to-gray-100/50";
       default:
         return "bg-white";
@@ -1008,14 +1008,16 @@ export default function TrialHubApp() {
           </div>
           <div className="h-6 w-px bg-slate-200"></div>
           <div className="flex space-x-1 rounded-xl bg-slate-100/80 p-1 backdrop-blur-sm">
-            {(["ADMIN", "CLINICIAN", "PHARMA"] as const).map((p) => {
+            {(["ADMIN", "CLINICIAN", "SPONSOR_CRO"] as const).map((p) => {
               const active = currentPortal === p;
               let activeClass = "bg-white text-slate-900 shadow-sm ring-1 ring-black/5";
               if (active) {
                 if (p === "ADMIN") activeClass = "bg-white text-violet-700 shadow-sm ring-1 ring-violet-100";
                 if (p === "CLINICIAN") activeClass = "bg-white text-teal-700 shadow-sm ring-1 ring-teal-100";
-                if (p === "PHARMA") activeClass = "bg-white text-slate-800 shadow-sm ring-1 ring-slate-200";
+                if (p === "SPONSOR_CRO") activeClass = "bg-white text-slate-800 shadow-sm ring-1 ring-slate-200";
               }
+
+              const displayLabel = p === "SPONSOR_CRO" ? "SPONSOR/CRO" : p;
 
               return (
                 <button
@@ -1027,7 +1029,7 @@ export default function TrialHubApp() {
                       : "text-slate-500 hover:bg-white/50 hover:text-slate-700"
                   }`}
                 >
-                  {p}
+                  {displayLabel}
                 </button>
               );
             })}
@@ -1061,7 +1063,7 @@ export default function TrialHubApp() {
         {currentPortal === "CLINICIAN" && (
           <ClinicianPortal trials={INITIAL_TRIALS} />
         )}
-        {currentPortal === "PHARMA" && <PharmaPortal trials={INITIAL_TRIALS} />}
+        {currentPortal === "SPONSOR_CRO" && <SponsorCROPortal trials={INITIAL_TRIALS} />}
       </div>
 
       {/* Footer Branding Info */}
