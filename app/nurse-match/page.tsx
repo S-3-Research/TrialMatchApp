@@ -127,9 +127,9 @@ const ArchitectureOverview = () => (
           subtitle="End-to-end operational path for Clinical Coordinators." 
         />
         <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-          <FlowStep number="1" title="Trial Initialization" details={["Define Sponsor & Protocol parameters", "Mark multiple execution sites on map", "Set clinical capability requirements for each site"]} />
-          <FlowStep number="2" title="Match Workspace" details={["Filter eligible nurses via spatial queries", "Manually 'Lock' preferred clinical staff", "Utilize AI 'Fill' to resolve remaining coverage gaps"]} />
-          <FlowStep number="3" title="Compliance Freeze" details={["Review plan conflicts (distance/availability)", "Freeze plan version for immutable Audit Log", "Single-click notification dispatch"]} />
+          <FlowStep number={1} title="Trial Initialization" details={["Define Sponsor & Protocol parameters", "Mark multiple execution sites on map", "Set clinical capability requirements for each site"]} />
+          <FlowStep number={2} title="Match Workspace" details={["Filter eligible nurses via spatial queries", "Manually 'Lock' preferred clinical staff", "Utilize AI 'Fill' to resolve remaining coverage gaps"]} />
+          <FlowStep number={3} title="Compliance Freeze" details={["Review plan conflicts (distance/availability)", "Freeze plan version for immutable Audit Log", "Single-click notification dispatch"]} />
         </div>
       </div>
 
@@ -140,9 +140,9 @@ const ArchitectureOverview = () => (
           subtitle="Credential management and mission execution process." 
         />
         <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
-          <FlowStep number="1" title="Onboarding & Compliance" details={["Upload RN/LPN certifications", "Set primary base address and service radius", "Define excluded zip code zones"]} />
-          <FlowStep number="2" title="Availability Sync" details={["Define weekly operational windows", "Automatic status sync with global matching engine"]} />
-          <FlowStep number="3" title="Mission Execution" details={["Receive confirmed trial assignment alerts", "Access Checklist and Map Navigation via portal"]} />
+          <FlowStep number={1} title="Onboarding & Compliance" details={["Upload RN/LPN certifications", "Set primary base address and service radius", "Define excluded zip code zones"]} />
+          <FlowStep number={2} title="Availability Sync" details={["Define weekly operational windows", "Automatic status sync with global matching engine"]} />
+          <FlowStep number={3} title="Mission Execution" details={["Receive confirmed trial assignment alerts", "Access Checklist and Map Navigation via portal"]} />
         </div>
       </div>
     </div>

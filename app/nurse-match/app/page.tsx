@@ -2,19 +2,116 @@
 
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { 
-  MapPin, Users, ClipboardList, Settings, Bell, Navigation, CheckCircle, 
-  AlertCircle, Plus, Search, Filter, Layers, Activity, Calendar, 
-  ChevronRight, ShieldCheck, Map as MapIcon, Home, Briefcase, X, 
-  Mail, Zap, FileText, UserPlus, History, Globe, MoreVertical, ExternalLink,
-  Clock, CheckSquare, LucideIcon, ChevronDown
+  MapPin, Users, ClipboardList, Settings, Bell, CheckCircle, 
+  Plus, Search, Layers, Activity, 
+  ShieldCheck, Map as MapIcon, X, 
+  Mail, Zap, History, LucideIcon, ChevronDown
 } from 'lucide-react';
 
 // Extend Window interface for Mapbox
 declare global {
   interface Window {
-    mapboxgl: any;
+    mapboxgl: MapboxGLType;
   }
 }
+
+// Declare mapboxgl types
+type MapboxGLType = {
+  accessToken: string;
+  Map: new (options: Record<string, unknown>) => MapInstance;
+  Marker: new (options?: Record<string, unknown> | HTMLElement) => MarkerInstance;
+  Popup: new (options?: Record<string, unknown>) => PopupInstance;
+  NavigationControl: new () => unknown;
+};
+
+type MapInstance = {
+  addControl: (control: unknown) => void;
+  on: (event: string, callback: (...args: unknown[]) => void) => void;
+  remove: () => void;
+  resize: () => void;
+  getSource: (id: string) => GeoJSONSource | undefined;
+  addSource: (id: string, source: unknown) => void;
+  addLayer: (layer: unknown) => void;
+  removeLayer: (id: string) => void;
+  removeSource: (id: string) => void;
+  getLayer: (id: string) => unknown;
+  setLayoutProperty: (layerId: string, name: string, value: unknown) => void;
+  setPaintProperty: (layerId: string, name: string, value: unknown) => void;
+  flyTo: (options: Record<string, unknown>) => void;
+  isStyleLoaded: () => boolean;
+  zoomIn: () => void;
+  zoomOut: () => void;
+};
+
+type GeoJSONSource = {
+  setData: (data: unknown) => void;
+};
+
+type MarkerInstance = {
+  setLngLat: (coords: [number, number]) => MarkerInstance;
+  addTo: (map: MapInstance) => MarkerInstance;
+  setPopup: (popup: PopupInstance) => MarkerInstance;
+  getElement: () => HTMLElement;
+  remove: () => void;
+  _element?: HTMLElement;
+  _isRecommended?: boolean;
+  _status?: string;
+  _isAssigned?: boolean;
+  _isActive?: boolean;
+  _addrType?: string;
+  _isOther?: boolean;
+};
+
+type PopupInstance = {
+  setLngLat: (coords: [number, number]) => PopupInstance;
+  setHTML: (html: string) => PopupInstance;
+  addTo: (map: MapInstance) => PopupInstance;
+  on: (event: string, callback: () => void) => PopupInstance;
+  remove: () => void;
+};
+
+declare const mapboxgl: MapboxGLType;
+
+// Type definitions
+type Address = {
+  id: string;
+  type: string;
+  address: string;
+  lat: number;
+  lng: number;
+  assignedNurseId: string | null;
+};
+
+type Nurse = {
+  id: string;
+  name: string;
+  status: string;
+  distance: string;
+  rating: number;
+  capabilities: string[];
+  specialty: string[];
+  lat: number;
+  lng: number;
+  license: string;
+  joined: string;
+  address: string;
+  radius: number;
+};
+
+type Trial = {
+  id: string;
+  name: string;
+  sponsor: string;
+  status: string;
+  requirements: { nurseCount: number; capabilities: string[] };
+  startDate: string;
+  addresses: Address[];
+};
+
+type PathItem = {
+  path: [number, number][];
+  isActive: boolean;
+};
 
 // --- Mock Data ---
 const MOCK_NURSES = [
@@ -88,8 +185,8 @@ const SidebarItem = ({ icon: Icon, label, active, onClick }: { icon: LucideIcon;
 
 // --- Interactive Map Component ---
 const InteractiveMap = ({ addresses = [], nurses = [], selectedAddressId, onSelectAddress, viewMode = 'match', customCenter, customRadius, showNurses = true, recommendedNurses = [], onNurseClick, onActivePopupChange }: {
-  addresses?: any[];
-  nurses?: any[];
+  addresses?: Address[];
+  nurses?: Nurse[];
   selectedAddressId?: string | null;
   onSelectAddress?: (id: string) => void;
   viewMode?: string;
@@ -101,12 +198,12 @@ const InteractiveMap = ({ addresses = [], nurses = [], selectedAddressId, onSele
   onActivePopupChange?: (nurseId: string | null) => void;
 }) => {
   const mapDivRef = useRef<HTMLDivElement>(null);
-  const mapInstance = useRef<any>(null);
-  const markersRef = useRef<any[]>([]);
+  const mapInstance = useRef<MapInstance | null>(null);
+  const markersRef = useRef<MarkerInstance[]>([]);
   // Marker caches for incremental updates
-  const addressMarkersCache = useRef<Map<string, any>>(new Map());
-  const nurseMarkersCache = useRef<Map<string, any>>(new Map());
-  const assignmentPathsRef = useRef<any[]>([]);
+  const addressMarkersCache = useRef<Map<string, MarkerInstance>>(new Map());
+  const nurseMarkersCache = useRef<Map<string, MarkerInstance>>(new Map());
+  const assignmentPathsRef = useRef<PathItem[]>([]);
   const [engineStatus, setEngineStatus] = useState('loading');
 
   // Helper function to get address icon SVG
@@ -195,17 +292,19 @@ const InteractiveMap = ({ addresses = [], nurses = [], selectedAddressId, onSele
   // Helper functions for layer management
   const removeLayers = (layerIds: string[]) => {
     if (!mapInstance.current) return;
+    const map = mapInstance.current;
     layerIds.forEach(id => {
-      if (mapInstance.current.getLayer(id)) {
-        mapInstance.current.removeLayer(id);
+      if (map.getLayer(id)) {
+        map.removeLayer(id);
       }
     });
   };
 
   const removeSource = (sourceId: string) => {
     if (!mapInstance.current) return;
-    if (mapInstance.current.getSource(sourceId)) {
-      mapInstance.current.removeSource(sourceId);
+    const map = mapInstance.current;
+    if (map.getSource(sourceId)) {
+      map.removeSource(sourceId);
     }
   };
 
@@ -239,7 +338,7 @@ const InteractiveMap = ({ addresses = [], nurses = [], selectedAddressId, onSele
     
     const marker = new mapboxgl.Marker(el)
       .setLngLat([customCenter.lng, customCenter.lat])
-      .addTo(mapInstance.current);
+      .addTo(mapInstance.current!);
     markersRef.current.push(marker);
 
     // Radius circle
@@ -303,7 +402,7 @@ const InteractiveMap = ({ addresses = [], nurses = [], selectedAddressId, onSele
 
     const heatmapData = {
       type: 'FeatureCollection',
-      features: nurses.map((n: any) => ({
+      features: nurses.map((n) => ({
         type: 'Feature',
         properties: {
           intensity: n.status === 'Available' ? 1.5 : n.status === 'Limited' ? 0.8 : 0.4
@@ -353,7 +452,7 @@ const InteractiveMap = ({ addresses = [], nurses = [], selectedAddressId, onSele
   }, [viewMode, nurses]);
 
   // Helper to create a curved line between two points
-  const getCurvedLineCoordinates = useCallback((start: [number, number], end: [number, number]) => {
+  const getCurvedLineCoordinates = useCallback((start: [number, number], end: [number, number]): [number, number][] => {
     const startLng = start[0];
     const startLat = start[1];
     const endLng = end[0];
@@ -370,7 +469,7 @@ const InteractiveMap = ({ addresses = [], nurses = [], selectedAddressId, onSele
     const controlLng = midLng - deltaLat * offsetScale;
     const controlLat = midLat + deltaLng * offsetScale;
 
-    const coordinates = [];
+    const coordinates: [number, number][] = [];
     const steps = 100; // Increased smoothness for animation
     for (let i = 0; i <= steps; i++) {
         const t = i / steps;
@@ -411,7 +510,7 @@ const InteractiveMap = ({ addresses = [], nurses = [], selectedAddressId, onSele
     }
 
     // Generate curved paths and store for animation
-    const newPaths: any[] = [];
+    const newPaths: PathItem[] = [];
     const lineFeatures = assignments.map(assignment => {
       const start: [number, number] = [assignment!.address.lng, assignment!.address.lat];
       const end: [number, number] = [assignment!.nurse.lng, assignment!.nurse.lat];
@@ -531,9 +630,9 @@ const InteractiveMap = ({ addresses = [], nurses = [], selectedAddressId, onSele
     });
 
     // Update or create markers for each address
-    addresses.forEach((addr: any) => {
+    addresses.forEach((addr) => {
       const isActive = selectedAddressId === addr.id;
-      const isOtherAddress = selectedAddressId && selectedAddressId !== addr.id;
+      const isOtherAddress = Boolean(selectedAddressId && selectedAddressId !== addr.id);
       const cachedMarker = cache.get(addr.id);
       
       // Enhanced color scheme and configuration for different address types
@@ -589,7 +688,7 @@ const InteractiveMap = ({ addresses = [], nurses = [], selectedAddressId, onSele
 
         const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
           .setLngLat([addr.lng, addr.lat])
-          .addTo(mapInstance.current);
+          .addTo(mapInstance.current!);
         
         // Store metadata for future comparison
         marker._isActive = isActive;
@@ -697,7 +796,7 @@ const InteractiveMap = ({ addresses = [], nurses = [], selectedAddressId, onSele
     }
 
     // Update or create markers for each nurse
-    nurses.forEach((n: any) => {
+    nurses.forEach((n) => {
       const isRecommended = recommendedNurses.includes(n.id);
       const isAvailable = n.status === 'Available';
       const isLimited = n.status === 'Limited';
@@ -786,7 +885,7 @@ const InteractiveMap = ({ addresses = [], nurses = [], selectedAddressId, onSele
           marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
             .setLngLat([n.lng, n.lat])
             .setPopup(popup)
-            .addTo(mapInstance.current);
+            .addTo(mapInstance.current!);
         } else if (isRecommended) {
           // Recommended nurses - blue, star
           el.className = 'recommended-nurse-marker';
@@ -815,7 +914,7 @@ const InteractiveMap = ({ addresses = [], nurses = [], selectedAddressId, onSele
           marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
             .setLngLat([n.lng, n.lat])
             .setPopup(popup)
-            .addTo(mapInstance.current);
+            .addTo(mapInstance.current!);
         } else if (isAvailable) {
           // Available nurses - small green dot
           el.className = 'available-nurse-marker';
@@ -840,7 +939,7 @@ const InteractiveMap = ({ addresses = [], nurses = [], selectedAddressId, onSele
           marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
             .setLngLat([n.lng, n.lat])
             .setPopup(popup)
-            .addTo(mapInstance.current);
+            .addTo(mapInstance.current!);
         } else if (isLimited) {
           // Limited - small orange dot
           el.className = 'limited-nurse-marker';
@@ -864,7 +963,7 @@ const InteractiveMap = ({ addresses = [], nurses = [], selectedAddressId, onSele
           marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
             .setLngLat([n.lng, n.lat])
             .setPopup(popup)
-            .addTo(mapInstance.current);
+            .addTo(mapInstance.current!);
         } else if (isUnavailable) {
           // Unavailable - gray dot
           el.className = 'unavailable-nurse-marker';
@@ -888,7 +987,7 @@ const InteractiveMap = ({ addresses = [], nurses = [], selectedAddressId, onSele
           marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
             .setLngLat([n.lng, n.lat])
             .setPopup(popup)
-            .addTo(mapInstance.current);
+            .addTo(mapInstance.current!);
         }
 
         if (marker) {
@@ -902,7 +1001,7 @@ const InteractiveMap = ({ addresses = [], nurses = [], selectedAddressId, onSele
         }
       }
     });
-  }, [nurses, showNurses, viewMode, recommendedNurses, addresses]);
+  }, [nurses, showNurses, viewMode, recommendedNurses, addresses, onNurseClick, onActivePopupChange]);
 
   // Initialize map
   useEffect(() => {
@@ -1001,7 +1100,11 @@ const InteractiveMap = ({ addresses = [], nurses = [], selectedAddressId, onSele
       const progress = (now % duration) / duration;
       const tailLength = 0.25; // Longer tail for visibility
       
-      const flowFeatures: any[] = [];
+      const flowFeatures: Array<{
+        type: 'Feature';
+        properties: { isActive: boolean };
+        geometry: { type: 'LineString'; coordinates: [number, number][] };
+      }> = [];
       
       if (assignmentPathsRef.current && assignmentPathsRef.current.length > 0) {
         assignmentPathsRef.current.forEach(item => {
@@ -1024,8 +1127,8 @@ const InteractiveMap = ({ addresses = [], nurses = [], selectedAddressId, onSele
            
            const invertedProgress = 1 - progress;
            
-           let endIndex = Math.floor(invertedProgress * totalPoints);
-           let startIndex = Math.floor((invertedProgress + tailLength) * totalPoints); // Tail is BEHIND head. 
+           const endIndex = Math.floor(invertedProgress * totalPoints);
+           const startIndex = Math.floor((invertedProgress + tailLength) * totalPoints); // Tail is BEHIND head. 
            // If head is at 0.8, tail is at 0.8 + 0.2 = 1.0 (since we are moving backwards).
            // Wait, if moving 1 -> 0.
            // Head at 0.9. Tail should be "behind" movement, so 0.9 + 0.1 = 1.0.
@@ -1067,7 +1170,7 @@ const InteractiveMap = ({ addresses = [], nurses = [], selectedAddressId, onSele
            }
         });
         
-        const source = mapInstance.current?.getSource('flow') as any;
+        const source = mapInstance.current?.getSource('flow');
         if (source && mapInstance.current?.isStyleLoaded()) {
            // Important: Check if layer exists to avoid "source not found" errors during HMR/updates
            source.setData({
@@ -1254,12 +1357,12 @@ const InteractiveMap = ({ addresses = [], nurses = [], selectedAddressId, onSele
 
 // --- Page: Admin Match Workspace ---
 const AdminMatchWorkspace = ({ trials, setTrials, selectedAddrId, setSelectedAddrId, viewMode, setViewMode, isLocked, setIsLocked, selectedTrialId, setSelectedTrialId }: {
-  trials: any[];
-  setTrials: (trials: any) => void;
+  trials: Trial[];
+  setTrials: (trials: Trial[] | ((prev: Trial[]) => Trial[])) => void;
   selectedAddrId: string;
   setSelectedAddrId: (id: string) => void;
   viewMode: string;
-  setViewMode: (mode: any) => void;
+  setViewMode: (mode: string | ((v: string) => string)) => void;
   isLocked: boolean;
   setIsLocked: (locked: boolean) => void;
   selectedTrialId: string;
@@ -1272,15 +1375,15 @@ const AdminMatchWorkspace = ({ trials, setTrials, selectedAddrId, setSelectedAdd
   const handleAIMatch = () => {
     setShowMatchingPopup(true);
     setTimeout(() => {
-        setTrials((prev: any[]) => prev.map((t: any) => {
+        setTrials((prev) => prev.map((t) => {
             if (t.id === selectedTrialId) {
                 // Get list of available nurses
                 const availableNurses = MOCK_NURSES.filter(n => n.status !== 'Unavailable');
-                const assignedNurseIds = new Set(t.addresses.map((a: any) => a.assignedNurseId).filter(Boolean));
+                const assignedNurseIds = new Set(t.addresses.map((a) => a.assignedNurseId).filter(Boolean));
                 
                 return {
                     ...t,
-                    addresses: t.addresses.map((a: any) => {
+                    addresses: t.addresses.map((a) => {
                         if (!a.assignedNurseId) {
                             // Find the closest available nurse to this address
                             const nursesWithDistance = availableNurses
@@ -1314,12 +1417,12 @@ const AdminMatchWorkspace = ({ trials, setTrials, selectedAddrId, setSelectedAdd
   
   const trial = trials.find(t => t.id === selectedTrialId) || trials[0];
   const activeAddr = selectedAddrId 
-    ? trial.addresses.find((a: any) => a.id === selectedAddrId) || null
+    ? trial.addresses.find((a) => a.id === selectedAddrId) || null
     : null;
-  const assignedTotal = trial.addresses.filter((a: any) => a.assignedNurseId).length;
+  const assignedTotal = trial.addresses.filter((a) => a.assignedNurseId).length;
   
   // Filter trials based on search query
-  const filteredTrials = trials.filter((t: any) => 
+  const filteredTrials = trials.filter((t) => 
     t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     t.sponsor.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -1350,7 +1453,7 @@ const AdminMatchWorkspace = ({ trials, setTrials, selectedAddrId, setSelectedAdd
   // Handle nurse marker click on map
   const handleNurseClick = (nurseId: string) => {
     // Find the address assigned to this nurse
-    const assignedAddress = trial.addresses.find((a: any) => a.assignedNurseId === nurseId);
+    const assignedAddress = trial.addresses.find((a) => a.assignedNurseId === nurseId);
     
     if (assignedAddress) {
       // If nurse is assigned, select that address
@@ -1421,10 +1524,10 @@ const AdminMatchWorkspace = ({ trials, setTrials, selectedAddrId, setSelectedAdd
 
   const updateAssignment = (nurseId: string | null, addressId?: string) => {
     const targetAddressId = addressId || selectedAddrId;
-    setTrials((prev: any[]) => prev.map((t: any) => 
+    setTrials((prev) => prev.map((t) => 
       t.id === selectedTrialId ? {
         ...t,
-        addresses: t.addresses.map((a: any) => a.id === targetAddressId ? { ...a, assignedNurseId: nurseId } : a)
+        addresses: t.addresses.map((a) => a.id === targetAddressId ? { ...a, assignedNurseId: nurseId } : a)
       } : t
     ));
   };
@@ -1440,7 +1543,7 @@ const AdminMatchWorkspace = ({ trials, setTrials, selectedAddrId, setSelectedAdd
       assignedNurseId: null
     };
     
-    setTrials((prev: any[]) => prev.map((t: any) => 
+    setTrials((prev) => prev.map((t) => 
       t.id === selectedTrialId ? {
         ...t,
         addresses: [...t.addresses, addressToAdd]
@@ -1483,7 +1586,7 @@ const AdminMatchWorkspace = ({ trials, setTrials, selectedAddrId, setSelectedAdd
                 </div>
                 <div className="max-h-72 overflow-y-auto">
                   {filteredTrials.length > 0 ? (
-                    filteredTrials.map((t: any) => (
+                    filteredTrials.map((t) => (
                       <button
                         key={t.id}
                         onClick={() => handleTrialSelect(t.id)}
@@ -1588,7 +1691,7 @@ const AdminMatchWorkspace = ({ trials, setTrials, selectedAddrId, setSelectedAdd
                 <p className="text-xs mt-1">Click + to add an address</p>
               </div>
             ) : (
-              trial.addresses.map((addr: any) => (
+              trial.addresses.map((addr) => (
               <div key={addr.id} onClick={() => setSelectedAddrId(addr.id)} className={`p-3.5 rounded-xl border transition-all cursor-pointer group ${selectedAddrId === addr.id ? 'border-blue-500 bg-white shadow-md ring-1 ring-blue-500/10' : 'border-slate-200 bg-white hover:border-blue-300 hover:shadow-sm'}`}>
                 <div className="flex justify-between items-start mb-2">
                   <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${addr.type === 'Patient Home' ? 'bg-blue-50 text-blue-700' : addr.type === 'Trial Site' ? 'bg-purple-50 text-purple-700' : 'bg-amber-50 text-amber-700'}`}>{String(addr.type)}</span>
@@ -1838,13 +1941,13 @@ const AdminMatchWorkspace = ({ trials, setTrials, selectedAddrId, setSelectedAdd
 };
 
 // --- Page: Nurse Portal Component ---
-const NursePortal = ({ user, currentPage }: { user: any; currentPage: string }) => {
+const NursePortal = ({ user, currentPage }: { user: Nurse; currentPage: string }) => {
   if (currentPage === 'Coverage') return <NurseCoverage user={user} />;
   if (currentPage === 'Assignments') return <NurseAssignments />;
   return <NurseDashboard user={user} />;
 };
 
-const NurseDashboard = ({ user }: { user: any }) => (
+const NurseDashboard = ({ user }: { user: Nurse }) => (
   <div className="p-8 h-full bg-slate-50/50 overflow-y-auto">
     <div className="flex justify-between items-center mb-8">
       <div>
@@ -1872,7 +1975,7 @@ const NurseDashboard = ({ user }: { user: any }) => (
   </div>
 );
 
-const NurseCoverage = ({ user }: { user: any }) => {
+const NurseCoverage = ({ user }: { user: Nurse }) => {
   const [radius, setRadius] = useState(user.radius);
   return (
     <div className="flex h-full bg-white overflow-hidden">
@@ -1904,7 +2007,7 @@ const NurseAssignments = () => (
   <div className="p-8 h-full bg-slate-50/50 overflow-y-auto">
     <h2 className="text-2xl font-bold text-slate-800 mb-6">My Assignments</h2>
     <div className="space-y-3">
-      {MOCK_ASSIGNMENTS.map((as: any) => (
+      {MOCK_ASSIGNMENTS.map((as) => (
         <div key={as.id} className="bg-white p-5 rounded-2xl border border-slate-200 flex items-center gap-6 shadow-sm hover:shadow-md transition-all group">
           <div className="w-16 text-center shrink-0 border-r border-slate-100 pr-6 group-hover:border-blue-100 transition-colors">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{as.date.split(' ')[0]}</p>
@@ -1937,7 +2040,7 @@ const AdminTrials = () => (
           <tr><th className="px-6 py-4">Trial</th><th className="px-6 py-4">Status</th><th className="px-6 py-4">Locations</th><th className="px-6 py-4 text-right">Actions</th></tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
-          {MOCK_TRIALS.map((t: any) => (
+          {MOCK_TRIALS.map((t) => (
             <tr key={t.id} className="hover:bg-slate-50 transition-colors group">
               <td className="px-6 py-4 font-semibold text-sm text-slate-800">{t.name}<p className="text-[10px] text-slate-500 font-medium uppercase mt-0.5">{t.sponsor}</p></td>
               <td className="px-6 py-4"><span className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-[10px] font-bold uppercase border border-blue-100">{t.status}</span></td>
@@ -1955,7 +2058,7 @@ const AdminNurseDirectory = () => (
   <div className="p-8 space-y-6 h-full bg-slate-50/50 overflow-y-auto">
     <h2 className="text-2xl font-bold text-slate-800">Nurse Directory</h2>
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {MOCK_NURSES.map((n: any) => (
+      {MOCK_NURSES.map((n) => (
         <div key={n.id} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
           <div className="flex justify-between items-start mb-4 relative z-10">
             <div className="w-12 h-12 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-slate-200">{n.name[0]}</div>
