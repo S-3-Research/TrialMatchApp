@@ -70,15 +70,15 @@ export default function DemoHomePage() {
           </div>
 
           {/* Demo Cards Grid */}
-          <div className="grid md:grid-cols-3 gap-6 md:gap-8">
-            {Object.values(DEMOS).map((demo) => {
+          <div className="flex flex-wrap justify-center gap-6 md:gap-8">
+            {Object.values(DEMOS).filter(demo => !demo.hidden).map((demo) => {
               const isUnlocked = unlockedDemos.has(demo.id);
               
               return (
                 <Link
                   key={demo.id}
                   href={demo.path}
-                  className="glass-card rounded-2xl p-6 md:p-8 group relative overflow-hidden"
+                  className="glass-card rounded-2xl p-6 md:p-8 group relative overflow-hidden w-full md:w-[340px]"
                 >
                   {/* Lock Icon Overlay */}
                   {!isUnlocked && (

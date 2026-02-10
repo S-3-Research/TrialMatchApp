@@ -4,18 +4,21 @@ export const DEMOS = {
     name: 'Trial Chat',
     description: 'AI-powered chat interface for clinical trials',
     path: '/trial-chat',
+    hidden: true,
   },
   'trial-hub': {
     id: 'trial-hub',
     name: 'Trial Hub',
     description: 'Clinical trials discovery and matching platform',
     path: '/trial-hub',
+    hidden: false,
   },
   'nurse-match': {
     id: 'nurse-match',
     name: 'Nurse Match',
     description: 'Nurse matching and protocol management system',
     path: '/nurse-match',
+    hidden: false,
   },
 } as const;
 
