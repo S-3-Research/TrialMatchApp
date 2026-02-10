@@ -90,7 +90,7 @@ export default function SettingsPage() {
       window.dispatchEvent(new CustomEvent('intake-preferences-updated'));
       
       // Redirect to chat
-      router.push("/chat");
+      router.push("/trial-chat/chat");
     } catch (error) {
       console.error("[Settings] Error saving preferences:", error);
     } finally {
@@ -99,7 +99,7 @@ export default function SettingsPage() {
   };
 
   const handleCancel = () => {
-    router.push("/chat");
+    router.push("/trial-chat/chat");
   };
 
   if (!isLoaded || isLoading) {
@@ -138,7 +138,7 @@ export default function SettingsPage() {
               No preferences found. Complete the intake form to get started.
             </p>
             <button
-              onClick={() => router.push("/chat")}
+              onClick={() => router.push("/trial-chat/chat")}
               className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition shadow-sm"
             >
               Go to Chat

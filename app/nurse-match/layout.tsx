@@ -5,13 +5,13 @@ import { useRouter } from 'next/navigation';
 import DemoPasswordModal from '@/components/DemoPasswordModal';
 import { isDemoUnlockedClient } from '@/lib/demoAuth';
 
-export default function TrialHubLayout({ children }: { children: ReactNode }) {
+export default function NurseMatchLayout({ children }: { children: ReactNode }) {
   const [isUnlocked, setIsUnlocked] = useState<boolean | null>(null);
   const router = useRouter();
 
   useEffect(() => {
     const checkUnlocked = () => {
-      const unlocked = isDemoUnlockedClient('trial-hub');
+      const unlocked = isDemoUnlockedClient('nurse-match');
       setIsUnlocked(unlocked);
     };
     
@@ -37,16 +37,12 @@ export default function TrialHubLayout({ children }: { children: ReactNode }) {
   if (isUnlocked === false) {
     return (
       <DemoPasswordModal
-        demoId="trial-hub"
+        demoId="nurse-match"
         onSuccess={handleSuccess}
         onCancel={handleCancel}
       />
     );
   }
 
-  return (
-    <div className="min-h-screen bg-slate-50">
-      {children}
-    </div>
-  );
+  return <>{children}</>;
 }

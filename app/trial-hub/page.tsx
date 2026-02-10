@@ -56,6 +56,12 @@ export default function TrialHub() {
             >
               Clinician Portal <ArrowRight size={18} />
             </Link>
+            <Link 
+              href="/trial-hub/dev-notes"
+              className="px-8 py-3 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200 flex items-center gap-2 transition-all border-2 border-slate-300"
+            >
+              Dev Notes <ArrowRight size={18} />
+            </Link>
           </div>
         </div>
       </section>

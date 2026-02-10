@@ -1,268 +1,140 @@
+'use client';
 
-"use client";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { DEMOS, isDemoUnlockedClient, type DemoId } from '@/lib/demoAuth';
 
-import { useState } from "react";
-import Link from "next/link";
+export default function DemoHomePage() {
+  const [unlockedDemos, setUnlockedDemos] = useState<Set<DemoId>>(new Set());
 
-export default function Home() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  useEffect(() => {
+    // Check which demos are unlocked
+    const unlocked = new Set<DemoId>();
+    Object.keys(DEMOS).forEach((demoId) => {
+      if (isDemoUnlockedClient(demoId as DemoId)) {
+        unlocked.add(demoId as DemoId);
+      }
+    });
+    setUnlockedDemos(unlocked);
+  }, []);
 
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes custom-float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-        @keyframes custom-fadeInUp {
-            0% { opacity: 0; transform: translateY(20px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
-        .animate-custom-float { animation: custom-float 6s ease-in-out infinite; }
-        .animate-custom-fade-in-up { animation: custom-fadeInUp 0.8s ease-out forwards; }
-        
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
-        }
-        
         .glass-card {
-            background: rgba(15, 23, 42, 0.4); 
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(148, 163, 184, 0.1); 
-            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.03); 
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08); 
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .glass-card:hover {
-            background: rgba(30, 41, 59, 0.6);
-            border-color: rgba(148, 163, 184, 0.3);
-            transform: translateY(-2px);
-        }
-
-        .text-gradient-logo {
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-image: linear-gradient(135deg, #cbd5e1 0%, #475569 100%);
+            background: rgba(255, 255, 255, 0.07);
+            border-color: rgba(56, 189, 248, 0.3);
+            transform: translateY(-4px);
+            box-shadow: 0 0 30px rgba(56, 189, 248, 0.05);
         }
         
-        .bg-noise {
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+        .bg-grid {
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
         }
       `}} />
 
-      <div className="min-h-screen md:h-screen w-full md:overflow-hidden flex items-center justify-center p-0 md:p-6 lg:p-8 bg-slate-950">
-          <main className="relative w-full md:h-full max-w-[1920px] mx-auto bg-slate-900 md:rounded-[2rem] overflow-hidden shadow-2xl ring-1 ring-white/10 flex flex-col">
-            
-            {/* 1. Background Image Layer with Cinematic Blur */}
-            <div className="absolute inset-0 z-0">
-                {/* Image Source: Warm, hopeful, senior oriented but abstract enough to be stylish */}
-                <img 
-                    src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=2576&auto=format&fit=crop" 
-                    alt="Background Ambience" 
-                    className="w-full h-full object-cover object-top opacity-60 mix-blend-overlay md:scale-105"
-                />
-                {/* Heavy Gradient Overlay for Text Readability */}
-                <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900/80 to-slate-900/60"></div>
-                {/* Vertical Gradient for bottom text */}
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/30"></div>
-                
-                {/* Noise Texture */}
-                <div className="absolute inset-0 bg-noise opacity-30 mix-blend-soft-light pointer-events-none"></div>
+      <div className="min-h-screen w-full flex items-center justify-center p-4 md:p-8 bg-black relative overflow-hidden font-sans">
+        {/* Backgrounds */}
+        <div className="absolute inset-0 bg-grid pointer-events-none"></div>
+        <div className="absolute top-0 left-0 right-0 h-[500px] bg-gradient-to-b from-blue-900/10 via-transparent to-transparent pointer-events-none"></div>
+        <div className="absolute -bottom-1/2 left-0 right-0 h-[600px] bg-gradient-to-t from-purple-900/10 via-transparent to-transparent pointer-events-none w-full blur-3xl"></div>
+
+        {/* Content */}
+        <div className="relative z-10 w-full max-w-6xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-12 md:mb-16">
+            <div className="inline-flex items-center gap-3 mb-4">
+              <Image
+                src="/logo_white.png"
+                alt="S-3 Logo"
+                width={144}
+                height={144}
+                className="object-contain"
+                priority
+              />
+              {/* <h1 className="text-3xl md:text-4xl font-bold text-white">Demos</h1> */}
             </div>
+            <p className="text-slate-400 text-lg">
+              Explore our AI-powered solutions
+            </p>
+          </div>
 
-            {/* 2. Navigation Bar (Simplified for integration) */}
-            <nav className="relative z-20 flex justify-between items-center px-6 py-6 md:px-12">
-                {/* Brand - functionally purely decorative here as Header is global */}
-                <div className="flex items-center gap-3 group cursor-pointer opacity-100 transition-opacity">
-                    {/* SVG Logo Chat Bubble */}
-                    <div className="relative w-10 h-10 flex items-center justify-center bg-gradient-to-br from-slate-700 to-slate-900 rounded-xl shadow-lg border border-white/10 group-hover:scale-105 transition-transform duration-300">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-slate-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-                        </svg>
-                        {/* Small AI Sparkle */}
-                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-400 rounded-full blur-[2px] animate-pulse"></div>
-                    </div>
-                    <span className="text-xl font-bold tracking-tight text-gradient-logo group-hover:opacity-80 transition-opacity">TrialChat</span>
-                </div>
-
-                {/* Simple Menu */}
-                <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
-                    <span className="hover:text-white transition-colors cursor-pointer">Why TrialChat</span>
-                    <span className="hover:text-white transition-colors cursor-pointer">How it Works</span>
-                    <Link href="/updates" className="px-4 py-2 rounded-full border border-white/20 bg-white/5 hover:bg-white/10 transition-all flex items-center gap-2">
-                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                        Updates
-                    </Link>
-                </div>
-
-                {/* Mobile Menu Button - Hamburger */}
-                <button 
-                    className="md:hidden p-2 text-slate-300 hover:text-white transition-colors relative z-50"
-                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          {/* Demo Cards Grid */}
+          <div className="grid md:grid-cols-3 gap-6 md:gap-8">
+            {Object.values(DEMOS).map((demo) => {
+              const isUnlocked = unlockedDemos.has(demo.id);
+              
+              return (
+                <Link
+                  key={demo.id}
+                  href={demo.path}
+                  className="glass-card rounded-2xl p-6 md:p-8 group relative overflow-hidden"
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
-                        {isMobileMenuOpen ? (
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        ) : (
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                        )}
+                  {/* Lock Icon Overlay */}
+                  {!isUnlocked && (
+                    <div className="absolute top-4 right-4 w-8 h-8 bg-slate-700/50 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/10">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                      </svg>
+                    </div>
+                  )}
+
+                  {/* Unlocked Badge */}
+                  {isUnlocked && (
+                    <div className="absolute top-4 right-4 px-3 py-1 bg-emerald-500/10 backdrop-blur-sm rounded-full border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
+                      <span className="text-xs font-mono font-medium text-emerald-400 tracking-wider">UNLOCKED</span>
+                    </div>
+                  )}
+
+                  {/* Demo Icon */}
+                  <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/0 border border-white/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:border-blue-500/30 transition-all duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-slate-400 group-hover:text-blue-400 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                      <path d="M2 17l10 5 10-5"></path>
+                      <path d="M2 12l10 5 10-5"></path>
                     </svg>
-                </button>
+                  </div>
 
-                {/* Mobile Menu Overlay */}
-                 {isMobileMenuOpen && (
-                    <div className="fixed inset-0 z-40 bg-slate-950/95 backdrop-blur-xl md:hidden flex flex-col items-center justify-center space-y-8 animate-custom-fade-in-up">
-                        <span className="text-2xl font-light text-slate-300 hover:text-white cursor-pointer">Why TrialChat</span>
-                        <span className="text-2xl font-light text-slate-300 hover:text-white cursor-pointer">How it Works</span>
-                        <Link href="/updates" className="text-2xl font-bold text-white flex items-center gap-3">
-                            Updates
-                        </Link>
-                    </div>
-                )}
-            </nav>
+                  {/* Demo Info */}
+                  <h3 className="text-xl font-medium text-white mb-2 group-hover:text-blue-300 transition-colors">
+                    {demo.name}
+                  </h3>
+                  <p className="text-slate-400 text-sm mb-6 line-clamp-2 leading-relaxed font-light">
+                    {demo.description}
+                  </p>
 
-            {/* 3. Main Content Area */}
-            <div className="relative z-10 flex-1 flex flex-col md:flex-row items-end md:items-center justify-between px-6 md:px-16 pb-12 md:pb-0">
-                
-                {/* Left Side: Massive Typography */}
-                <div className="w-full md:w-1/2 flex flex-col justify-end h-full md:pb-24 space-y-4">
-                    {/* Subtitle Tag */}
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-400/20 text-blue-200 text-xs font-semibold tracking-wider uppercase w-fit animate-custom-fade-in-up" style={{animationDelay: '0.1s'}}>
-                        <i className="ph ph-brain text-lg"></i>
-                        ADRD Clinical Navigator
-                    </div>
+                  {/* CTA */}
+                  <div className="flex items-center gap-2 text-xs font-mono font-medium text-slate-500 group-hover:text-blue-400 transition-colors border-t border-white/5 pt-4 mt-auto">
+                    <span className="tracking-wider">{isUnlocked ? 'ACCESS TERMINAL' : 'VIEW MODULE'}</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                      <polyline points="12 5 19 12 12 19"></polyline>
+                    </svg>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
 
-                    {/* Main Giant Title */}
-                    <h1 className="text-6xl md:text-8xl lg:text-9xl leading-[0.9] tracking-tighter text-slate-100 mix-blend-overlay opacity-90 animate-custom-fade-in-up" style={{animationDelay: '0.2s', fontFamily: 'sans-serif'}}>
-                        <span className="font-light">trial</span><span className="font-bold">chat</span>
-                    </h1>
-                    
-                    {/* Tagline */}
-                    <p className="text-lg md:text-2xl text-slate-400 font-light max-w-lg animate-custom-fade-in-up" style={{animationDelay: '0.3s'}}>
-                        Connecting seniors and caregivers to <span className="text-slate-200 font-medium">Alzheimer&apos;s research</span> with clarity and compassion.
-                    </p>
-
-                    {/* Footer / Credits (Desktop Position) */}
-                    <div className="hidden md:block pt-12 opacity-60 text-xs text-slate-500 font-mono">
-                        <p>Designed by Cal State Fullerton & S-3 Research LLC</p>
-                        <p className="mt-1">© 2024 All Rights Reserved</p>
-                    </div>
-                </div>
-
-                {/* Right Side: The Glass "Interface" Card */}
-                <div className="w-full md:w-[420px] lg:w-[480px] animate-custom-fade-in-up" style={{animationDelay: '0.5s'}}>
-                    
-                    {/* Main Glass Container */}
-                    <div className="glass-panel rounded-3xl p-6 md:p-8 relative overflow-hidden group">
-                        
-                        {/* Decorative blurred circle behind content */}
-                        <div className="absolute -top-10 -right-10 w-40 h-40 bg-blue-500/20 rounded-full blur-3xl pointer-events-none group-hover:bg-blue-500/30 transition-colors duration-500"></div>
-
-                        {/* Intro Text inside Card */}
-                        <div className="mb-8 relative z-10">
-                            <h2 className="text-2xl font-bold text-white mb-2">Find your path.</h2>
-                            <p className="text-sm text-slate-400 leading-relaxed">
-                                Navigating clinical trials shouldn&apos;t be confusing. We simplify the journey for ADRD patients and their families.
-                            </p>
-                        </div>
-
-                        {/* Feature Stack */}
-                        <div className="space-y-3 relative z-10">
-                            {/* Feature 1 */}
-                            <div className="glass-card p-4 rounded-xl flex items-center gap-4 cursor-default">
-                                <div className="w-10 h-10 rounded-lg bg-slate-800/50 flex items-center justify-center text-blue-300 shadow-inner">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h3 className="text-sm font-semibold text-slate-200">Personalized Education</h3>
-                                    <p className="text-xs text-slate-500">Learn about ADRD on your terms.</p>
-                                </div>
-                            </div>
-
-                            {/* Feature 2 */}
-                            <div className="glass-card p-4 rounded-xl flex items-center gap-4 cursor-default">
-                                <div className="w-10 h-10 rounded-lg bg-slate-800/50 flex items-center justify-center text-purple-300 shadow-inner">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h3 className="text-sm font-semibold text-slate-200">Smart Trial Matching</h3>
-                                    <p className="text-xs text-slate-500">Find studies fitting your needs & location.</p>
-                                </div>
-                            </div>
-
-                            {/* Feature 3 */}
-                            <div className="glass-card p-4 rounded-xl flex items-center gap-4 cursor-default">
-                                <div className="w-10 h-10 rounded-lg bg-slate-800/50 flex items-center justify-center text-emerald-300 shadow-inner">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h3 className="text-sm font-semibold text-slate-200">Simplified Enrollment</h3>
-                                    <p className="text-xs text-slate-500">Step-by-step guidance to get started.</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* CTA Button Area */}
-                        <div className="mt-8 pt-6 border-t border-white/10 relative z-10">
-                            <Link href="/chat" className="w-full block group/btn relative overflow-hidden rounded-xl bg-gradient-to-r from-slate-200 to-slate-400 p-[1px] focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-900">
-                                <div className="relative h-full w-full rounded-xl bg-slate-900 px-6 py-4 transition-all group-hover/btn:bg-slate-800 group-hover/btn:bg-opacity-80">
-                                    <div className="flex items-center justify-between">
-                                        <span className="font-semibold text-slate-200 group-hover/btn:text-white transition-colors">Start Your Journey</span>
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-slate-200 group-hover/btn:translate-x-1 transition-transform">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                                        </svg>
-                                    </div>
-                                </div>
-                            </Link>
-                        </div>
-                    </div>
-
-                    {/* Trust Badges */}
-                    <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 text-[10px] md:text-xs font-medium text-slate-500 uppercase tracking-widest">
-                        <div className="flex items-center gap-1.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" className="w-4 h-4 text-slate-400">
-                                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
-                            </svg>
-                            HIPAA Compliant
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" className="w-4 h-4 text-slate-400">
-                                <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
-                            </svg>
-                            Secure & Private
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" className="w-4 h-4 text-slate-400">
-                                <path d="M12 3L1 9l11 6 9-4.91V17h2V9M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/>
-                            </svg>
-                            Expert Guidance
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-
-            {/* Mobile Footer */}
-            <div className="md:hidden p-6 text-center text-xs text-slate-600 bg-slate-950/80 backdrop-blur-md border-t border-white/5">
-                <p>Designed by Cal State Fullerton & S-3 Research LLC</p>
-                <Link href="/updates" className="mt-2 inline-block text-slate-400 underline">View Updates</Link>
-            </div>
-
-            {/* Decorative Elements */}
-            <div className="absolute top-0 left-1/3 w-[1px] h-full bg-white/5 pointer-events-none hidden lg:block"></div>
-            <div className="absolute top-0 left-2/3 w-[1px] h-full bg-white/5 pointer-events-none hidden lg:block"></div>
-            
-          </main>
+          {/* Footer Note */}
+          <div className="mt-16 text-center">
+            <p className="text-slate-600 text-xs font-mono tracking-widest uppercase">
+              <span className="mr-2 opacity-50">🔒</span>
+              Secured Access Area
+            </p>
+          </div>
+        </div>
       </div>
     </>
   );

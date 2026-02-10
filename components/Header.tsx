@@ -49,7 +49,7 @@ export default function Header() {
         
         {/* Navigation Links */}
         <nav className="hidden md:flex items-center gap-1 mr-2">
-            <Link href="/" className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-white/5 transition-all text-sm font-medium">
+            <Link href="/trial-chat" className="flex items-center gap-2 px-3 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-white/5 transition-all text-sm font-medium">
                 {/* Outlined Home Icon */}
                 <svg className="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
@@ -153,7 +153,7 @@ export default function Header() {
                       <div className="px-3 py-2.5 flex flex-col gap-2">
                           <DropdownMenu.Item asChild>
                             <Link
-                              href="/settings"
+                              href="/trial-chat/settings"
                               className="flex items-center gap-2 w-full px-2 py-2 text-xs font-medium text-slate-700 rounded-lg border border-slate-200 bg-slate-50/50 transition-colors hover:bg-slate-100 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:border-slate-600 cursor-pointer outline-none group"
                             >
                               <div className="p-1 rounded-md bg-white dark:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-600 group-hover:border-slate-300 dark:group-hover:border-slate-500 transition-colors">
@@ -170,7 +170,7 @@ export default function Header() {
 
                           <DropdownMenu.Item asChild>
                             <Link
-                              href="/personalization"
+                              href="/trial-chat/personalization"
                               className="flex items-center gap-2 w-full px-2 py-2 text-xs font-medium text-slate-700 rounded-lg border border-slate-200 bg-slate-50/50 transition-colors hover:bg-slate-100 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-200 dark:hover:bg-slate-800 dark:hover:border-slate-600 cursor-pointer outline-none group"
                             >
                               <div className="p-1 rounded-md bg-white dark:bg-slate-700 shadow-sm border border-slate-200 dark:border-slate-600 group-hover:border-slate-300 dark:group-hover:border-slate-500 transition-colors">
@@ -219,8 +219,8 @@ export default function Header() {
              <DropdownMenu.Portal>
                 <DropdownMenu.Content className="z-[60] min-w-[200px] rounded-xl border py-2 shadow-xl border-slate-200 bg-white/95 backdrop-blur-xl dark:border-slate-700 dark:bg-slate-900/95" align="end">
                   <DropdownMenu.Item asChild><Link href="/" className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">Home</Link></DropdownMenu.Item>
-                  <DropdownMenu.Item asChild><Link href="/personalization" className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">Personalization</Link></DropdownMenu.Item>
-                  <DropdownMenu.Item asChild><Link href="/settings" className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">Settings</Link></DropdownMenu.Item>
+                  <DropdownMenu.Item asChild><Link href="/trial-chat/personalization" className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">Personalization</Link></DropdownMenu.Item>
+                  <DropdownMenu.Item asChild><Link href="/trial-chat/settings" className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">Settings</Link></DropdownMenu.Item>
                 </DropdownMenu.Content>
              </DropdownMenu.Portal>
         </DropdownMenu.Root>

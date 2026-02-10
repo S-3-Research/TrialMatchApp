@@ -1,17 +1,22 @@
 'use client';
 
-import { ReactNode, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import DemoPasswordModal from '@/components/DemoPasswordModal';
 import { isDemoUnlockedClient } from '@/lib/demoAuth';
 
-export default function TrialHubLayout({ children }: { children: ReactNode }) {
+export default function TrialChatLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   const [isUnlocked, setIsUnlocked] = useState<boolean | null>(null);
   const router = useRouter();
 
   useEffect(() => {
+    // Check if demo is unlocked on client side
     const checkUnlocked = () => {
-      const unlocked = isDemoUnlockedClient('trial-hub');
+      const unlocked = isDemoUnlockedClient('trial-chat');
       setIsUnlocked(unlocked);
     };
     
@@ -26,27 +31,25 @@ export default function TrialHubLayout({ children }: { children: ReactNode }) {
     router.push('/');
   };
 
+  // Show loading state while checking
   if (isUnlocked === null) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-gray-600">Loading...</div>
+      <div className="h-screen w-full flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <div className="text-gray-600 dark:text-gray-400">Loading...</div>
       </div>
     );
   }
 
+  // Show password modal if not unlocked
   if (isUnlocked === false) {
     return (
       <DemoPasswordModal
-        demoId="trial-hub"
+        demoId="trial-chat"
         onSuccess={handleSuccess}
         onCancel={handleCancel}
       />
     );
   }
 
-  return (
-    <div className="min-h-screen bg-slate-50">
-      {children}
-    </div>
-  );
+  return <>{children}</>;
 }

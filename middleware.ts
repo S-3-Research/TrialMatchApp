@@ -12,6 +12,7 @@ const isPublicApiRoute = createRouteMatcher([
   '/api/create-session',  // ChatKit 创建 session（在登录前调用）
   '/api/whisper',         // Whisper 语音转文字 API
   '/api/tools',           // Tools API - authentication checked per-tool in handler
+  '/api/demo-auth',       // Demo password verification API
 ]);
 
 // Protected API routes (require authentication)
@@ -19,43 +20,7 @@ const isProtectedApiRoute = createRouteMatcher([
   '/api/migrate-intake',  // Migration needs auth
 ]);
 
-// 开发阶段的简单密码保护
-function checkDevPassword(req: Request): NextResponse | null {
-  // 只在设置了 DEV_PASSWORD 环境变量时启用
-  const devPassword = process.env.DEV_PASSWORD;
-  if (!devPassword) return null;
-
-  const authHeader = req.headers.get('authorization');
-  
-  if (!authHeader) {
-    return new NextResponse('Authentication required', {
-      status: 401,
-      headers: {
-        'WWW-Authenticate': 'Basic realm="Development Access"',
-      },
-    });
-  }
-
-  const auth = authHeader.split(' ')[1];
-  const [user, pass] = Buffer.from(auth, 'base64').toString().split(':');
-
-  if (pass !== devPassword) {
-    return new NextResponse('Invalid credentials', {
-      status: 401,
-      headers: {
-        'WWW-Authenticate': 'Basic realm="Development Access"',
-      },
-    });
-  }
-
-  return null;
-}
-
 export default clerkMiddleware(async (auth, req) => {
-  // 先检查开发密码（如果设置了）
-  const devPasswordResponse = checkDevPassword(req);
-  if (devPasswordResponse) return devPasswordResponse;
-
   // 公开 API 路由不需要 Clerk 认证 - 必须在 protect() 之前返回
   if (isPublicApiRoute(req)) {
     console.log("Public API route, skipping Clerk auth:", req.url);
