@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { DEMOS, isDemoUnlockedClient, type DemoId } from '@/lib/demoAuth';
 
 export default function DemoHomePage() {
@@ -22,40 +23,46 @@ export default function DemoHomePage() {
     <>
       <style dangerouslySetInnerHTML={{ __html: `
         .glass-card {
-            background: rgba(15, 23, 42, 0.4); 
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(148, 163, 184, 0.1); 
-            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.03); 
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08); 
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .glass-card:hover {
-            background: rgba(30, 41, 59, 0.6);
-            border-color: rgba(148, 163, 184, 0.3);
+            background: rgba(255, 255, 255, 0.07);
+            border-color: rgba(56, 189, 248, 0.3);
             transform: translateY(-4px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 0 30px rgba(56, 189, 248, 0.05);
         }
         
-        .bg-noise {
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+        .bg-grid {
+            background-size: 40px 40px;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
         }
       `}} />
 
-      <div className="min-h-screen w-full flex items-center justify-center p-4 md:p-8 bg-slate-950 relative overflow-hidden">
-        {/* Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950"></div>
-        <div className="absolute inset-0 bg-noise opacity-30 mix-blend-soft-light pointer-events-none"></div>
+      <div className="min-h-screen w-full flex items-center justify-center p-4 md:p-8 bg-black relative overflow-hidden font-sans">
+        {/* Backgrounds */}
+        <div className="absolute inset-0 bg-grid pointer-events-none"></div>
+        <div className="absolute top-0 left-0 right-0 h-[500px] bg-gradient-to-b from-blue-900/10 via-transparent to-transparent pointer-events-none"></div>
+        <div className="absolute -bottom-1/2 left-0 right-0 h-[600px] bg-gradient-to-t from-purple-900/10 via-transparent to-transparent pointer-events-none w-full blur-3xl"></div>
 
         {/* Content */}
         <div className="relative z-10 w-full max-w-6xl mx-auto">
           {/* Header */}
           <div className="text-center mb-12 md:mb-16">
             <div className="inline-flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 flex items-center justify-center bg-gradient-to-br from-slate-700 to-slate-900 rounded-xl shadow-lg border border-white/10">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-slate-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
-                </svg>
-              </div>
-              <h1 className="text-3xl md:text-4xl font-bold text-white">S-3 Demos</h1>
+              <Image
+                src="/logo_white.png"
+                alt="S-3 Logo"
+                width={144}
+                height={144}
+                className="object-contain"
+                priority
+              />
+              {/* <h1 className="text-3xl md:text-4xl font-bold text-white">Demos</h1> */}
             </div>
             <p className="text-slate-400 text-lg">
               Explore our AI-powered solutions
@@ -85,14 +92,14 @@ export default function DemoHomePage() {
 
                   {/* Unlocked Badge */}
                   {isUnlocked && (
-                    <div className="absolute top-4 right-4 px-3 py-1 bg-green-500/20 backdrop-blur-sm rounded-full border border-green-500/30">
-                      <span className="text-xs font-medium text-green-400">Unlocked</span>
+                    <div className="absolute top-4 right-4 px-3 py-1 bg-emerald-500/10 backdrop-blur-sm rounded-full border border-emerald-500/20 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
+                      <span className="text-xs font-mono font-medium text-emerald-400 tracking-wider">UNLOCKED</span>
                     </div>
                   )}
 
                   {/* Demo Icon */}
-                  <div className="w-14 h-14 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <div className="w-14 h-14 bg-gradient-to-br from-white/5 to-white/0 border border-white/10 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:border-blue-500/30 transition-all duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-slate-400 group-hover:text-blue-400 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
                       <path d="M2 17l10 5 10-5"></path>
                       <path d="M2 12l10 5 10-5"></path>
@@ -100,17 +107,17 @@ export default function DemoHomePage() {
                   </div>
 
                   {/* Demo Info */}
-                  <h3 className="text-xl font-bold text-white mb-2 group-hover:text-blue-300 transition-colors">
+                  <h3 className="text-xl font-medium text-white mb-2 group-hover:text-blue-300 transition-colors">
                     {demo.name}
                   </h3>
-                  <p className="text-slate-400 text-sm mb-4 line-clamp-2">
+                  <p className="text-slate-400 text-sm mb-6 line-clamp-2 leading-relaxed font-light">
                     {demo.description}
                   </p>
 
                   {/* CTA */}
-                  <div className="flex items-center gap-2 text-sm font-medium text-blue-400 group-hover:text-blue-300 transition-colors">
-                    <span>{isUnlocked ? 'Enter Demo' : 'View Demo'}</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <div className="flex items-center gap-2 text-xs font-mono font-medium text-slate-500 group-hover:text-blue-400 transition-colors border-t border-white/5 pt-4 mt-auto">
+                    <span className="tracking-wider">{isUnlocked ? 'ACCESS TERMINAL' : 'VIEW MODULE'}</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3 group-hover:translate-x-1 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <line x1="5" y1="12" x2="19" y2="12"></line>
                       <polyline points="12 5 19 12 12 19"></polyline>
                     </svg>
@@ -121,9 +128,10 @@ export default function DemoHomePage() {
           </div>
 
           {/* Footer Note */}
-          <div className="mt-12 text-center">
-            <p className="text-slate-500 text-sm">
-              🔒 Each demo is password protected. Contact your administrator for access credentials.
+          <div className="mt-16 text-center">
+            <p className="text-slate-600 text-xs font-mono tracking-widest uppercase">
+              <span className="mr-2 opacity-50">🔒</span>
+              Secured Access Area
             </p>
           </div>
         </div>
