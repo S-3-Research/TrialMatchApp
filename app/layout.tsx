@@ -8,8 +8,8 @@ import { ColorSchemeProvider } from "@/contexts/ColorSchemeContext";
 import { ThemeScript } from "@/components/ThemeScript";
 
 export const metadata: Metadata = {
-  title: "AgentKit demo",
-  description: "Demo of ChatKit with hosted workflow",
+  title: "S-3 Demo",
+  description: "Demo page",
 };
 
 export default function RootLayout({
