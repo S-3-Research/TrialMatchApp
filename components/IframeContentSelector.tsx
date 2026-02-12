@@ -9,7 +9,7 @@ import type { IntakeData } from "@/lib/types/intake";
 // Base URLs mapped by role
 const BASE_URL_MAP: Record<string, string> = {
   'user': 'https://www.stack-ai.com/chat/680972a82d4d99f4d0d5ed9a-6l9P2RWj4FhGToCtW9jvqo',
-  'caregiver': 'https://s-3.io',
+  'caregiver': 'https://www.stack-ai.com/chat/698cfd7ab7c2fcb1d3dcd210-6l9P2RWj4FhGToCtW9jvqo',
   'default': 'https://www.stack-ai.com/chat/680972a82d4d99f4d0d5ed9a-6l9P2RWj4FhGToCtW9jvqo',
 };
 
