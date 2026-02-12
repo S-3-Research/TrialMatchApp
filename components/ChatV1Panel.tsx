@@ -348,6 +348,7 @@ export function ChatV1Panel({ theme }: ChatV1PanelProps) {
                 onError={handleIframeError}
                 sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
                 loading="lazy"
+                allow="microphone; clipboard-read; clipboard-write"
               />
             )}
 
