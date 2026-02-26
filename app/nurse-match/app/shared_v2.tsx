@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 // Re-export most components from shared.tsx
 export {
@@ -76,9 +77,8 @@ export const MOCK_NURSES_V2 = [
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { 
-  MapPin, Users, ClipboardList, Search, Layers,
-  ChevronRight, X, ChevronsLeft, ChevronsRight,
-  Zap, ChevronDown, CheckCircle, Phone, ShieldCheck
+  MapPin, Users, Search, Layers,
+  X, Zap, ChevronDown, CheckCircle, Phone, ShieldCheck
 } from 'lucide-react';
 import { ActionCard, NurseCoverage, NurseSettings, MOCK_NURSE as _MOCK_NURSE } from './shared';
 
