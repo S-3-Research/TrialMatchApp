@@ -19,7 +19,11 @@ import {
   Search,
   Layers,
   FileText,
-  Globe 
+  Globe,
+  MessageSquare,
+  Send,
+  Blocks,
+  Gauge
 } from 'lucide-react';
 
 // --- Sub-components ---
@@ -149,6 +153,74 @@ const ArchitectureOverview = () => (
   </div>
 );
 
+// V2 Architecture Overview
+const V2ArchitectureOverview = () => (
+  <div className="space-y-12">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+      <div>
+        <SectionTitle 
+          icon={Users} 
+          title="Nurse Workflow" 
+          subtitle="From training to site assignment via SMS." 
+        />
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+          <FlowStep number={1} title="Receive Training Invite" details={["Opt in to participate in matching system"]} />
+          <FlowStep number={2} title="Enter Profile" details={["Input home address", "Set service radius", "Upload license credentials"]} />
+          <FlowStep number={3} title="Complete Training" details={["System marks nurse as certified", "Profile activated for matching"]} />
+          <FlowStep number={4} title="When Site Matches" details={["Receive SMS with date range + site address", "MRN scheduling link provided", "Link to update address/radius preferences"]} />
+        </div>
+      </div>
+
+      <div>
+        <SectionTitle 
+          icon={LayoutDashboard} 
+          title="Match Operator Workflow" 
+          subtitle="Simple site-based matching activation process." 
+        />
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm">
+          <FlowStep number={1} title="Enter Site Information" details={["Input site address", "Specify required license type"]} />
+          <FlowStep number={2} title="Activate Match" details={["Trigger matching algorithm"]} />
+          <FlowStep number={3} title="System Notification" details={["System sends SMS to certified nurses within radius", "Automatic notification to eligible candidates"]} />
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+// V2 Design Principles
+const V2DesignPrinciples = () => (
+  <div className="space-y-12">
+    <SectionTitle 
+      icon={ShieldCheck} 
+      title="Core Design Principles" 
+      subtitle="Guiding philosophy for the text-driven matching system." 
+    />
+    
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <PrincipleCard 
+        icon={Gauge} 
+        title="Simplicity First" 
+        description="Keep workflows lightweight and frictionless, especially for time-constrained healthcare professionals."
+      />
+      <PrincipleCard 
+        icon={Blocks} 
+        title="Modular & Integratable" 
+        description="Build components that can plug into external systems (scheduling, training, CRM) without tight coupling."
+      />
+      <PrincipleCard 
+        icon={Lock} 
+        title="Security by Design" 
+        description="Incorporate privacy, access control, and compliance considerations from the outset — not as an afterthought."
+      />
+      <PrincipleCard 
+        icon={Zap} 
+        title="Scalable Automation" 
+        description="Automate matching and notifications to handle increasing volume without proportional manual effort."
+      />
+    </div>
+  </div>
+);
+
 // Design Principles View
 const DesignPrinciples = () => (
   <div className="space-y-12">
@@ -221,6 +293,7 @@ const DesignPrinciples = () => (
 // --- Main App Component ---
 
 export default function App() {
+  const [version, setVersion] = useState('v2');
   const [activeTab, setActiveTab] = useState('architecture');
 
   return (
@@ -237,17 +310,17 @@ export default function App() {
           </div>
           
           <nav className="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
-            {['architecture', 'principles'].map((tab) => (
+            {['v1', 'v2'].map((ver) => (
               <button 
-                key={tab}
-                onClick={() => setActiveTab(tab)}
+                key={ver}
+                onClick={() => setVersion(ver)}
                 className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-all uppercase ${
-                  activeTab === tab 
+                  version === ver 
                     ? 'bg-white shadow-sm text-blue-600' 
                     : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
-                {tab}
+                {ver}
               </button>
             ))}
           </nav>
@@ -255,17 +328,17 @@ export default function App() {
 
         <div className="flex items-center gap-3">
           <a 
-            href="/nurse-match/app/admin"
+            href={version === 'v1' ? '/nurse-match/app/admin' : '/nurse-match/app/admin_v2'}
             className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-xs font-bold uppercase shadow-lg shadow-blue-100/50 hover:bg-blue-700 transition-colors flex items-center gap-2"
           >
-            ADMIN DEMO
+            ADMIN DEMO <span className="text-[9px] opacity-70 font-medium">{version}</span>
             <ArrowRight size={14} />
           </a>
           <a 
-            href="/nurse-match/app/nurse"
+            href={version === 'v1' ? '/nurse-match/app/nurse' : '/nurse-match/app/nurse_v2'}
             className="bg-slate-800 text-white px-5 py-2.5 rounded-xl text-xs font-bold uppercase shadow-lg shadow-slate-200/50 hover:bg-slate-900 transition-colors flex items-center gap-2"
           >
-            NURSE DEMO
+            NURSE DEMO <span className="text-[9px] opacity-70 font-medium">{version}</span>
             <ArrowRight size={14} />
           </a>
         </div>
@@ -278,20 +351,62 @@ export default function App() {
             <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-[10px] font-black uppercase mb-6 tracking-widest">
               <Activity size={12} /> Strategic Roadmap
             </div>
-            <h1 className="text-5xl font-black text-slate-900 tracking-tighter mb-6 leading-none">
-              Engineering Hybrid <br /> 
-              <span className="text-blue-600">Spatial Coordination.</span>
-            </h1>
-            <p className="text-lg text-slate-500 font-medium leading-relaxed">
-              Clinical Match Pro is a map-first operations platform designed to safely match certified nurses with clinical sites, combining AI recommendations with human oversight and full auditability.
-            </p>
+            {version === 'v1' ? (
+              <>
+                <h1 className="text-5xl font-black text-slate-900 tracking-tighter mb-6 leading-none">
+                  Engineering Hybrid <br /> 
+                  <span className="text-blue-600">Spatial Coordination.</span>
+                </h1>
+                <p className="text-lg text-slate-500 font-medium leading-relaxed">
+                  Clinical Match Pro is a map-first operations platform designed to safely match certified nurses with clinical sites, combining AI recommendations with human oversight and full auditability.
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="inline-flex items-center gap-2 bg-amber-50 text-amber-600 px-3 py-1 rounded-full text-[9px] font-black uppercase mb-4 tracking-widest border border-amber-200/60">
+                  <span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-60"></span><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500"></span></span>
+                  Design In Progress · Temporary
+                </div>
+                <h1 className="text-5xl font-black text-slate-900 tracking-tighter mb-6 leading-none">
+                  Rapid Prototype <br /> 
+                  <span className="text-blue-600">Nurse Coordination.</span>
+                </h1>
+                <p className="text-lg text-slate-500 font-medium leading-relaxed">
+                  Experimental matching interface for quick iteration. This view is a work-in-progress scaffold — layout, data, and interactions are subject to change as we refine the workflow.
+                </p>
+              </>
+            )}
           </div>
         </div>
       </div>
 
       {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-10 py-16">
-        {activeTab === 'architecture' ? <ArchitectureOverview /> : <DesignPrinciples />}
+        {/* Tab Selector */}
+        <div className="flex justify-center mb-12">
+          <nav className="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
+            {['architecture', 'principles'].map((tab) => (
+              <button 
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-6 py-2.5 rounded-md text-sm font-semibold transition-all uppercase ${
+                  activeTab === tab 
+                    ? 'bg-white shadow-sm text-blue-600' 
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        {/* Content based on version and tab */}
+        {version === 'v1' ? (
+          activeTab === 'architecture' ? <ArchitectureOverview /> : <DesignPrinciples />
+        ) : (
+          activeTab === 'architecture' ? <V2ArchitectureOverview /> : <V2DesignPrinciples />
+        )}
       </main>
 
       {/* Footer Area */}

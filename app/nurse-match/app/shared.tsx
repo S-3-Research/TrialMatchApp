@@ -1832,7 +1832,7 @@ export const AdminMatchWorkspace = ({ trials, setTrials, selectedAddrId, setSele
                   
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex-1 pr-6">
-                      <h5 className="font-bold text-slate-800 text-sm mb-1">{String(nurse.name)}</h5>
+                      <h5 className="font-bold text-slate-800 text-sm mb-1">{String(nurse.license)}</h5>
                       <div className="flex items-center gap-2 text-xs">
                         <span className="font-medium text-slate-500">{nurse.calculatedDistance.toFixed(1)} mi away</span>
                         {isRecommended && <span className="text-blue-600 font-bold text-[10px]">• 98% Match</span>}
