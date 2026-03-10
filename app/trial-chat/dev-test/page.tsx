@@ -103,7 +103,7 @@ const WORKFLOW_PRESETS: { id: string; name: string }[] = [
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
-export interface PerCaseMeta {
+interface PerCaseMeta {
   avgRating: number | null;
   hallucinationCount: number;
   widgetCount: number;
@@ -112,7 +112,7 @@ export interface PerCaseMeta {
   totalTurns: number;
 }
 
-export function computePerCaseMeta(r: TestResult): PerCaseMeta {
+function computePerCaseMeta(r: TestResult): PerCaseMeta {
   const assistantTurns = r.conversation.filter((t) => t.role === "assistant");
   const ratedTurns = assistantTurns.filter(
     (t) => t.rating && t.rating.stars > 0
