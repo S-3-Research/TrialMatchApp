@@ -472,6 +472,7 @@ async function handleGetTrials(params: Record<string, unknown>) {
       clinical_trial?: {
         id?: string;
         title?: string;
+        link?: string;
         recruitment_status?: string;
         summary_100?: string;
         summary_50?: string;
@@ -493,6 +494,7 @@ async function handleGetTrials(params: Record<string, unknown>) {
     }) => ({
       id: trial.clinical_trial?.id,
       title: trial.clinical_trial?.title,
+      link: trial.clinical_trial?.link,
       recruitment_status: trial.clinical_trial?.recruitment_status,
       summary: trial.clinical_trial?.summary_100 || trial.clinical_trial?.summary_50,
       locations: trial.clinical_trial?.locations?.slice(0, 3).map((loc: { city?: string; state?: string; country?: string }) => ({

@@ -33,8 +33,12 @@ import Link from "next/link";
 import {
   WORKFLOW_ID,
   CREATE_SESSION_ENDPOINT,
+  PLACEHOLDER_INPUT,
   getThemeConfig,
+  getStarterPromptsForUser,
+  getGreetingForUser,
 } from "@/lib/config";
+import { IntakeData } from "@/lib/types/intake";
 import { useColorScheme } from "@/contexts/ColorSchemeContext";
 import { useFontSize } from "@/contexts/FontSizeContext";
 
@@ -100,6 +104,14 @@ const WORKFLOW_PRESETS: { id: string; name: string }[] = [
   { id: "wf_68e40129687881909cb2491e48e40fb50d778612cf5adf60", name: "Trial Chat" },
   // { id: "flow_yyyyyyyyyyyy", name: "General Q&A" },
 ];
+
+// ── Default Intake Data ────────────────────────────────────────────────
+
+const DEFAULT_INTAKE_DATA: IntakeData = {
+  role: "user",
+  response_style: "balanced",
+  intent: "trial_matching",
+};
 
 // ── Helpers ────────────────────────────────────────────────────────────
 
@@ -177,6 +189,7 @@ interface TestSessionProps {
   containerId: string;
   colorScheme: "dark" | "light";
   baseFontSize: 14 | 16 | 18;
+  intakeData: IntakeData;
   onComplete: (testCaseId: string, conversation: ConversationTurn[], error?: string) => void;
   onProgress: (testCaseId: string, msgIndex: number, total: number) => void;
 }
@@ -187,13 +200,14 @@ const TestSession = React.memo(function TestSession({
   containerId,
   colorScheme,
   baseFontSize,
+  intakeData,
   onComplete,
   onProgress,
 }: TestSessionProps) {
   const msgIdxRef = useRef(0);
   const isCompleteRef = useRef(false);
   const threadIdRef = useRef<string | null>(null);
-  const responseSeqRef = useRef(0);
+  const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const busyRef = useRef(false);
 
   const [tick, setTick] = useState(0);
@@ -225,13 +239,14 @@ const TestSession = React.memo(function TestSession({
       body: JSON.stringify({
         workflow: { id: workflowId },
         guest_user_id: `test_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
-        chatkit_configuration: { file_upload: { enabled: false } },
+        intake_data: intakeData,
+        chatkit_configuration: { file_upload: { enabled: true } },
       }),
     });
     const data = await res.json();
     if (!res.ok || !data.client_secret) throw new Error(data.error?.message || "Failed to create session");
     return data.client_secret as string;
-  }, [workflowId]);
+  }, [workflowId, intakeData]);
 
   // ---- Fetch ALL thread messages once at the end ----
   const fetchAllMessages = useCallback(async (): Promise<ConversationTurn[]> => {
@@ -260,20 +275,57 @@ const TestSession = React.memo(function TestSession({
   const chatkit = useChatKit({
     api: { getClientSecret },
     theme: { colorScheme, ...getThemeConfig(colorScheme, baseFontSize) },
-    startScreen: { greeting: "Test session", prompts: [] },
-    composer: { placeholder: "Test session..." },
+    startScreen: {
+      greeting: getGreetingForUser(intakeData),
+      prompts: getStarterPromptsForUser(intakeData),
+    },
+    composer: {
+      placeholder: PLACEHOLDER_INPUT,
+      attachments: { enabled: true },
+    },
+    threadItemActions: {
+      feedback: true,
+      retry: true,
+    },
+    onClientTool: async (invocation: { name: string; params: Record<string, unknown> }) => {
+      try {
+        const response = await fetch("/api/tools", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            toolName: invocation.name,
+            params: invocation.params,
+          }),
+        });
+        const contentType = response.headers.get("content-type");
+        if (!response.ok || !contentType?.includes("application/json")) {
+          return { success: false, error: `API error (${response.status})` };
+        }
+        return await response.json();
+      } catch (error) {
+        return { success: false, error: error instanceof Error ? error.message : "Tool call failed" };
+      }
+    },
     onResponseStart: () => {
-      responseSeqRef.current++;
+      // Cancel any pending advance — a new generation is starting (e.g. tool result processing).
+      if (advanceTimerRef.current) {
+        clearTimeout(advanceTimerRef.current);
+        advanceTimerRef.current = null;
+      }
       busyRef.current = true;
     },
     onResponseEnd: () => {
-      const seq = responseSeqRef.current;
-      responseSeqRef.current = -1;
-      if (seq < 1) return;
-      // Just unlock and advance — no fetch here
       busyRef.current = false;
-      msgIdxRef.current++;
-      setTick((t) => t + 1);
+      // Debounce: if another onResponseStart fires within 400ms, the timer will be
+      // cancelled above and rescheduled after that generation ends — regardless of
+      // how many tool-chained generations occur. Only the final end triggers advance.
+      if (advanceTimerRef.current) clearTimeout(advanceTimerRef.current);
+      advanceTimerRef.current = setTimeout(() => {
+        advanceTimerRef.current = null;
+        if (busyRef.current) return; // extra safety
+        msgIdxRef.current++;
+        setTick((t) => t + 1);
+      }, 400);
     },
     onThreadChange: ({ threadId }: { threadId: string | null }) => {
       if (threadId) threadIdRef.current = threadId;
@@ -281,6 +333,7 @@ const TestSession = React.memo(function TestSession({
     onError: ({ error }: { error: unknown }) => {
       console.error("[TestSession] ChatKit error:", error);
       busyRef.current = false;
+      if (advanceTimerRef.current) { clearTimeout(advanceTimerRef.current); advanceTimerRef.current = null; }
       if (!isCompleteRef.current) {
         isCompleteRef.current = true;
         onComplete(testCase.id, [], error instanceof Error ? error.message : "ChatKit error");
@@ -406,6 +459,7 @@ export default function DevTestPage() {
   const [showDatasetPreview, setShowDatasetPreview] = useState(false);
   const [editedDatasets, setEditedDatasets] = useState<Record<string, TestDataset>>({});
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [intakeData, setIntakeData] = useState<IntakeData>(DEFAULT_INTAKE_DATA);
   const exportMenuRef = useRef<HTMLDivElement>(null);
   const stopRequestedRef = useRef(false);
   const retryingIdsRef = useRef<Set<string>>(new Set());
@@ -1078,6 +1132,54 @@ export default function DevTestPage() {
             </button>
           )}
         </div>
+
+        {/* Row 3: Intake Settings */}
+        <div className="flex items-center gap-3 pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
+          <label className="text-sm text-slate-500 dark:text-slate-400 font-medium shrink-0">
+            Intake:
+          </label>
+          <div className="flex items-center gap-2 flex-wrap">
+            <select
+              value={intakeData.role}
+              onChange={(e) => setIntakeData((prev) => ({ ...prev, role: e.target.value as IntakeData["role"] }))}
+              disabled={runnerStatus === "running"}
+              className="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            >
+              <option value="user">Patient</option>
+              <option value="caregiver">Caregiver</option>
+            </select>
+            <select
+              value={intakeData.response_style}
+              onChange={(e) => setIntakeData((prev) => ({ ...prev, response_style: e.target.value as IntakeData["response_style"] }))}
+              disabled={runnerStatus === "running"}
+              className="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            >
+              <option value="concise">Concise</option>
+              <option value="balanced">Balanced</option>
+              <option value="verbose">Verbose</option>
+            </select>
+            <select
+              value={intakeData.intent}
+              onChange={(e) => setIntakeData((prev) => ({ ...prev, intent: e.target.value as IntakeData["intent"] }))}
+              disabled={runnerStatus === "running"}
+              className="bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+            >
+              <option value="trial_matching">Trial Matching</option>
+              <option value="learn_about_trials">Learn About Trials</option>
+            </select>
+            <button
+              onClick={() => setIntakeData(DEFAULT_INTAKE_DATA)}
+              disabled={runnerStatus === "running"}
+              className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 disabled:opacity-50 px-1.5 py-1 rounded border border-slate-200 dark:border-slate-700 hover:border-slate-400 transition-colors"
+              title="Reset to defaults"
+            >
+              Reset
+            </button>
+          </div>
+          <span className="text-xs text-slate-400 dark:text-slate-500 shrink-0">
+            → passed as workflow state_variables
+          </span>
+        </div>
       </div>
 
       {/* Progress Bar */}
@@ -1442,6 +1544,7 @@ export default function DevTestPage() {
                         containerId={`chatkit-session-${tc.id}`}
                         colorScheme={scheme}
                         baseFontSize={baseFontSize as 14 | 16 | 18}
+                        intakeData={intakeData}
                         onComplete={handleTestComplete}
                         onProgress={handleProgress}
                       />
