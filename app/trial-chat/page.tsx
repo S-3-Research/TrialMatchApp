@@ -149,7 +149,7 @@ export default function Home() {
                     {/* Footer / Credits (Desktop Position) */}
                     <div className="hidden md:block pt-12 opacity-60 text-xs text-slate-500 font-mono">
                         <p>Designed by Cal State Fullerton & S-3 Research LLC</p>
-                        <p className="mt-1">© 2024 All Rights Reserved</p>
+                        <p className="mt-1">© 2026 All Rights Reserved</p>
                     </div>
                 </div>
 
@@ -229,12 +229,12 @@ export default function Home() {
 
                     {/* Trust Badges */}
                     <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 text-[10px] md:text-xs font-medium text-slate-500 uppercase tracking-widest">
-                        <div className="flex items-center gap-1.5">
+                        {/* <div className="flex items-center gap-1.5">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" className="w-4 h-4 text-slate-400">
                                 <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/>
                             </svg>
                             HIPAA Compliant
-                        </div>
+                        </div> */}
                         <div className="flex items-center gap-1.5">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" className="w-4 h-4 text-slate-400">
                                 <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
